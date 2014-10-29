@@ -1,5 +1,7 @@
 (ns evol.mutation)
 
+(require '[evol.utils :refer [HOLD ishold? get-notes]])
+
 (defn two-points [n]
   (let [a (rand-int n)
         b (rand-int n)]
@@ -23,7 +25,15 @@
             (first (rest (rest substrings))))))
 
 (defn sort-ascending [i strlen]
-  (modify-substring i strlen (fn [x] (sort (fn [a b] (< a b)) x))))
+  (modify-substring i strlen
+                    (fn [x]
+                      (flatten
+                        (sort (fn [a b] (< (first a) (first b)))
+                              (get-notes x))))))
 
 (defn sort-descending [i strlen]
-  (modify-substring i strlen (fn [x] (sort (fn [a b] (< b a)) x))))
+  (modify-substring i strlen
+                    (fn [x]
+                      (flatten
+                        (sort (fn [a b] (< (first b) (first a)))
+                              (get-notes x))))))

@@ -14,9 +14,48 @@
 (require '[evol.mutation :as mutation])
 (require 'evol.utils)
 
+(defn max1 [l]
+  (reduce (fn [best x] (if (< (first x) (first best)) x best)) (first l) l))
+
+;; Plays a single note
+(defmethod play-note :default [{midi :pitch}] (sampled-piano midi))
+
+;; Plays a list of notes for the given durations
+(defn play-melody [key- mode bpm- pitches durations]
+  (->> (phrase durations pitches)
+    (where :part (is :melody))
+    (where :time (bpm bpm-))
+    (where :pitch (comp key- mode))
+    play))
+
+;; Return a single element renadomly from the domain
+(defn from-domain [d] (d (rand-int (- (.length d) 1))))
+
+;; Define fold holds
+(defn fold-holds [melody lengths]
+  (defn f [acc melody lengths]
+    (if (empty? melody) acc
+      (if (= (first melody) HOLD)
+        (if (empty? acc)
+          (f (cons (list (first melody) (first lengths)) acc) (rest melody) (rest lengths))
+          (f (cons (list (first (first acc)) (+ 1/2 (second (first acc)))) (rest acc))
+             (rest melody) (rest lengths)))
+        (f (cons (list (first melody) (first lengths)) acc) (rest melody) (rest lengths)))))
+  (f '() melody lengths))
+
+;; Play a list of notes (currently each note is interpreted as an eigth note)
+(defn play-one [key- mode bpm- melody]
+  (let* [lengths (map (fn [_] 1/2) melody)
+         both    (fold-holds melody lengths)
+         new-melody (map first both)
+         new-lengths (map second both)]
+    (println both)
+    (println new-melody)
+    (println new-lengths)
+    (play-melody key- mode bpm- (into [] new-melody) new-lengths)))
+
 ;; The domain of a piece is its octave +/- half an octave
 (def domain (into [] (range -4 13)))
-
 
 ;; Initialize one single line of music (one individual)
 (defn init-one [hold-rate length domain]
@@ -57,4 +96,3 @@
                   (* 8 4))
                 (* 8 4)))))
 
-(-main)

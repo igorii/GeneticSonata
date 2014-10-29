@@ -1,5 +1,5 @@
 (defproject goldberg "0.1.0-SNAPSHOT"
-  :description "The Goldberg Variations in Overtone."
+  :description "Evolution of music"
   :main evol.core
   :dependencies	[
     [org.clojure/clojure "1.5.1"]
