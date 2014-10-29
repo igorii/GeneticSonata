@@ -1,6 +1,6 @@
 (ns evol.mutation)
 
-(defn two-points [n] 
+(defn two-points [n]
   (let [a (rand-int n)
         b (rand-int n)]
     (if (< a b) (list a b) (list b a))))
@@ -12,7 +12,7 @@
     (list p q r)))
 
 (defn split-three [i strlen]
-  (let [points (two-points strlen)]
+  (let [points (two-points (+ 1 strlen))]
     (println points)
     (split-three-at i (first points) (second points))))
 
