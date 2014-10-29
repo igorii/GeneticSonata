@@ -12,21 +12,10 @@
 (require '[evol.crossover :as crossover]) 
 (require '[evol.selection :as selection])
 (require '[evol.mutation :as mutation])
-(require 'evol.utils)
+(require '[evol.utils :refer [HOLD ishold? get-notes]])
 
 (defn max1 [l]
   (reduce (fn [best x] (if (< (first x) (first best)) x best)) (first l) l))
-
-;; Plays a single note
-(defmethod play-note :default [{midi :pitch}] (sampled-piano midi))
-
-;; Plays a list of notes for the given durations
-(defn play-melody [key- mode bpm- pitches durations]
-  (->> (phrase durations pitches)
-    (where :part (is :melody))
-    (where :time (bpm bpm-))
-    (where :pitch (comp key- mode))
-    play))
 
 ;; Return a single element renadomly from the domain
 (defn from-domain [d] (d (rand-int (- (.length d) 1))))
@@ -41,18 +30,7 @@
           (f (cons (list (first (first acc)) (+ 1/2 (second (first acc)))) (rest acc))
              (rest melody) (rest lengths)))
         (f (cons (list (first melody) (first lengths)) acc) (rest melody) (rest lengths)))))
-  (f '() melody lengths))
-
-;; Play a list of notes (currently each note is interpreted as an eigth note)
-(defn play-one [key- mode bpm- melody]
-  (let* [lengths (map (fn [_] 1/2) melody)
-         both    (fold-holds melody lengths)
-         new-melody (map first both)
-         new-lengths (map second both)]
-    (println both)
-    (println new-melody)
-    (println new-lengths)
-    (play-melody key- mode bpm- (into [] new-melody) new-lengths)))
+  (f '() (reverse melody) (reverse lengths)))
 
 ;; The domain of a piece is its octave +/- half an octave
 (def domain (into [] (range -4 13)))
@@ -67,11 +45,39 @@
 (defn init-population [size hold-rate length domain]
   (map (fn [_] (init-one hold-rate length domain)) (range 0 size)))
 
-(defn create-next-gen [fpop psize tsize]
-  (map (fn [_] (apply crossover/one-point
-                      (concat (map second (selection/tournament fpop tsize))
-                              (list (rand-int (* 8 4))))))
-       (range 0 (/ psize 2))))
+(defn chance [n] (< (rand) n))
+
+(defn create-next-gen [fpop psize tsize strlen mutation%]
+  (apply concat
+    (map (fn [_] 
+           (let [candidates (apply crossover/one-point
+                                   (concat (map second (selection/tournament fpop tsize))
+                                           (list (rand-int (* 8 4)))))]
+             (println candidates)
+             (if (chance mutation%) 
+               (list ((mutation/random) (first  candidates) strlen)
+                     ((mutation/random) (second candidates) strlen))
+               candidates)))
+         (range 0 (/ psize 2)))))
+
+(defmethod play-note :default [{midi :pitch}] (sampled-piano midi))
+
+;; Plays a list of notes for the given durations
+(defn play-melody [key- mode bpm- pitches durations]
+  (->> (phrase durations pitches)
+    (where :part (is :melody))
+    (where :time (bpm bpm-))
+    (where :pitch (comp key- mode))
+    play))
+
+;; Play a list of notes (currently each note is interpreted as an eigth note)
+(defn play-one [key- mode bpm- melody]
+  (let* [lengths     (map (fn [_] 1/2) melody)
+         both        (fold-holds melody lengths)
+         new-melody  (map first both)
+         new-lengths (map second both)]
+    (println (into [] both))
+    (play-melody key- mode bpm- (into [] new-melody) new-lengths)))
 
 ;; Main
 (defn -main []
@@ -79,20 +85,14 @@
     (let* [fits       (map (fitness/fitness 'theme E) oldpop)
            fpop       (map list fits oldpop)
            best       (max1 fpop)]
-      (if (or = 0 (first best) (= 0 iter))
+      (println (first best))
+      (if (or (= 0 (first best)) (= 0 iter))
         best
-        (recur (- iter 1) (map second (create-next-gen fpop 100 12))))))
+        (recur (- iter 1) (create-next-gen fpop 500 16 (* 8 4) 0.5)))))
 
-  (let* [population (init-population 100 0.2 (* 8 4) domain)
-         best (l 50 population)]
+  (let* [population (init-population 500 0.4 (* 8 4) domain)
+         best (l 100 population)]
     (println "best: ")
     (println best)
-    (play-one D major 130
-              (mutation/sort-ascending
-                (mutation/sort-descending
-                  (mutation/sort-descending
-                    (mutation/sort-ascending (second best) (* 8 4))
-                    (* 8 4))
-                  (* 8 4))
-                (* 8 4)))))
+    (play-one D major 130 (second best))))
 

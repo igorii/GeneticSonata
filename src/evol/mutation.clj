@@ -15,7 +15,6 @@
 
 (defn split-three [i strlen]
   (let [points (two-points (+ 1 strlen))]
-    (println points)
     (split-three-at i (first points) (second points))))
 
 (defn modify-substring [i strlen op]
@@ -37,3 +36,6 @@
                       (flatten
                         (sort (fn [a b] (< (first b) (first a)))
                               (get-notes x))))))
+
+(defn random []
+  (nth [sort-ascending sort-descending] (rand-int 2)))

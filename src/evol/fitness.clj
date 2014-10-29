@@ -1,5 +1,7 @@
 (ns evol.fitness)
 
+(require '[evol.utils :refer [HOLD]])
+
 ;; SPECIES
 ;; =======
 ;;
@@ -32,7 +34,6 @@
 ;; Two population single evolution
 ;;     P1 -> Population of indices into phrase pop
 ;;     P2 -> Population of phrases
-;;
 ;;
 ;; FITNESS
 ;; =======
@@ -96,6 +97,15 @@
 (defn fit-end-on-tonic [melody]
   (Math/abs (first (reverse melody))))
 
+(defn fit-on-beat-notes [melody]
+  (let [{odds true evens false} (group-by odd?
+                                          (map first
+                                               (filter (fn [x] (= HOLD (second x)))
+                                                       (map-indexed list melody))))]
+          ;odd-count  (count odds)
+          ;even-count (count evens)]
+    (count evens)))
+
 ;; ******
 ;; Phrase
 ;; ******
@@ -107,8 +117,9 @@
 
 (defn fitness-theme [melody key-]
   (let [a (fit-start-on-tonic melody)
-        b (fit-end-on-tonic   melody)]
-    (+ a b)))
+        b (fit-end-on-tonic   melody)
+        c (* 2 (fit-on-beat-notes  melody))]
+    (+ a b c)))
 
 (defn fitness [type- key-]
   (fn [melody]
