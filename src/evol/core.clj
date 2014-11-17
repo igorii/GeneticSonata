@@ -16,6 +16,8 @@
 
 (defn max1 [l]
   (reduce (fn [best x] (if (< (first x) (first best)) x best)) (first l) l))
+(defn min1 [l]
+  (reduce (fn [worst x] (if (> (first x) (first worst)) x worst)) (first l) l))
 
 ;; Return a single element renadomly from the domain
 (defn from-domain [d] (d (rand-int (- (.length d) 1))))
@@ -23,7 +25,6 @@
 (defn zip [xs ys] (map list xs ys))
 
 (defn fold-holds [melody lengths]
-
   (defn f [notes lengths noteacc lengthacc]
     (if (empty? notes)
       (zip noteacc lengthacc)
@@ -31,12 +32,7 @@
         (let [rlengths (reverse lengthacc)]
           (recur (rest notes) (rest lengths) noteacc (reverse (concat (list (+ 1/2 (first rlengths))) (rest rlengths)))))
           (recur (rest notes) (rest lengths) (concat noteacc (list (first notes))) (concat lengthacc (list 1/2))))))
-
   (f melody lengths '() '()))
-
-(= (list '(1 1) '(3 1/2) '(4 1/2)) (fold-holds (list 1 HOLD 3 4) (list 1/2 1/2 1/2 1/2)))
-
-(fold-holds (list 1 HOLD 3 4) (list 1/2 1/2 1/2 1/2))
 
 ;; The domain of a piece is its octave +/- half an octave
 (def domain (into [] (range MINNOTE MAXNOTE)))
@@ -75,6 +71,8 @@
     (where :pitch (comp key- mode))
     play))
 
+(get-notes (list 1 HOLD HOLD 2 3 4 5))
+
 ;; Play a list of notes (currently each note is interpreted as an eigth note)
 (defn play-one [key- mode bpm- melody]
   (let* [lengths     (map (fn [_] 1/2) melody)
@@ -100,26 +98,39 @@
       (where :time (bpm bpm-))
       play)))
 
+(def *strlen* (* 8 4))
+
 (defn -main []
   (defn l [iter oldpop strlen]
     (let* [fits       (map (fitness/fitness 'theme E) oldpop)
            fpop       (map list fits oldpop)
-           best       (max1 fpop)]
-      (println (first best))
+           best       (max1 fpop)
+           worst      (min1 fpop)]
+      (println (list (first best) (first worst)))
       (if (or (= 0 (first best)) (= 0 iter))
-        (flatten (take 4 oldpop))
-        (recur (- iter 1) (create-next-gen fpop 50 8 strlen 0.7) strlen))))
+        ;(flatten (take 4 oldpop))
+        (second best)
+        (recur (- iter 1) (cons (second best) (create-next-gen fpop 100 8 strlen 0.7)) strlen))))
 
-  (let* [population (init-population 50 0.7 8 domain)
-         theme1 (l 100 population 8)
-         theme2 (l 100 population 8)]
+  (let* [population (init-population 100 0.4 *strlen* domain)
+         theme1 (l 100 population *strlen*)
+         theme2 (l 100 population *strlen*)]
     (println theme1)
+        (print "  Slope first half : ")
+    (println (fitness/fit-slope-first-half theme1))
+        (print "  Slope second half : ")
+    (println (fitness/fit-slope-second-half theme1))
+        (print "  Rest Ratio : ")
+    (println (fitness/fit-rest-ratio theme1))
+        (print "  Note on beat : ")
+    (println (fitness/fit-on-beat-notes theme1))
     (println theme2)
-    (play-sonata C G major 100 theme1 theme2 nil nil nil)))
+    (println (fitness/fit-hill-shape theme2))
+    (play-sonata C G major 120 theme1 theme2 nil nil nil)))
 
 (defn play-random []
   (let [population (init-population 4 0.7 8 domain)]
-    (play-one C major 100 (flatten population))))
+    (play-one C major 120 (flatten population))))
 
 (-main)
 

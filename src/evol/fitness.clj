@@ -81,9 +81,7 @@
             (list (first l) nil)
             l))))
 
-(difference (list 0 1 2 3 2 1 0 4 0))
-
-(defn normalize [x] (if (= 0 x) 1 (/ x (Math/abs x))))
+(defn normalize [x] (if (= 0 x) 0 (/ x (Math/abs x))))
 
 (defn normalize-list [l]
   (map normalize l))
@@ -97,9 +95,23 @@
          nrmls (map (fn [x] (normal-sum (difference x))) (list start end))]
     nrmls))
 
-(normal-halves (list 0 1 2 3  2 1 0 -1) 8)
+(defn fit-slope-first-half [melody]
+  (let [n (map first (get-notes melody))
+        c (count n)
+        h (take (/ c 2) n)]
+    (- (- (/ c 2) 1)
+       (Math/abs (normal-sum (difference h)) )) ))
 
-(normalize -5)
+(defn fit-slope-second-half [melody]
+  (let [n (map first (get-notes melody))
+        c (count melody)
+        h (drop (/ c 2) n)]
+    (- (- (/ c 2) 1)
+       (Math/abs (normal-sum (difference h)) )) ))
+
+
+
+
 
 ;; ******
 ;; Themes
@@ -107,10 +119,12 @@
 
 ;; 1) Start on tonic
 ;; Minimizing fitness score
+;; max = , min =
 (defn fit-start-on-tonic [melody]
   (Math/abs (first melody)))
 
 ;; 2) End on tonic
+;; max = , min =
 (defn fit-end-on-tonic [melody]
   (Math/abs (first (reverse melody))))
 
@@ -123,43 +137,59 @@
           ;even-count (count evens)]
     (count evens)))
 
+;; max =, min =
 (defn fit-perfect-candence-end [melody]
   (Math/abs (- (Math/abs (second (reverse melody))) 5)))
 
+;; max = , min =
 (defn fit-half-candence-middle [melody]
   (let* [rm2 (reverse (drop (/ (count melody) 2) melody))]
     (+
       (Math/abs (- (Math/abs (first rm2)) 5))
       (Math/abs (- (Math/abs (second rm2)) 0)))))
 
+;; max = , min =
 (defn fit-rest-ratio [melody]
   (let [{rests true others false} (group-by ishold? melody)]
-    (if (= rests 0) 0.6)
-    (Math/abs (- 0.4 (/ (count others) (count rests))))))
+    (if (= (count rests) 0) 1
+      (Math/abs (- 0.2 (/ (count rests) (count melody)))))))
 
+
+
+
+;      (Math/abs (- 0.4 (/ (count others) (count rests)))))))
+
+(fit-rest-ratio (list HOLD HOLD HOLD HOLD HOLD 1 1 HOLD))
+
+
+
+;; max = , min =
 (defn fit-hill-shape [melody]
   (let [c (count melody)
         diff (normal-halves melody c)
         sub  (+ (first diff) (second diff))]
-    (/ sub (normalize sub))))
+    (if (= sub 0) 0
+      (/ sub (normalize sub)))))
 
 ;; ******
 ;; Phrase
 ;; ******
-
 
 ;; ***
 ;; API
 ;; ***
 
 (defn fitness-theme [melody key-]
-  (+ (* 2 (fit-start-on-tonic melody))
-     (* 2 (fit-end-on-tonic   melody))
-     (* 2 (fit-hill-shape     melody))
-     (* 1 (fit-on-beat-notes  melody))
-     (* 3 (fit-rest-ratio     melody))
-     (* 2 (fit-perfect-candence-end melody))
-     (* 2 (fit-half-candence-middle melody))))
+  (+ (* 1 (fit-start-on-tonic         melody))
+     ;(* 1/7 (fit-end-on-tonic         melody))
+;     (* 1/7 (fit-hill-shape           melody))))
+
+     (* 3 (fit-slope-first-half       melody))
+     (* 3 (fit-slope-second-half      melody))
+     (* 1 (fit-on-beat-notes        melody))
+     (* 6 (fit-rest-ratio           melody))))
+     ;(* 1/7 (fit-perfect-candence-end melody))))
+     ;(* 1/7 (fit-half-candence-middle melody))))
 
 (defn fitness [type- key-]
   (fn [melody]

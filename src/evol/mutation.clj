@@ -13,6 +13,9 @@
         q (drop b i)]
     (list p q r)))
 
+(defn perfect-cadence [i strlen]
+  (concat (take (- strlen 2) i) (list 5 0)))
+
 (defn split-three [i strlen]
   (let [points (two-points (+ 1 strlen))]
     (split-three-at i (first points) (second points))))
@@ -38,22 +41,23 @@
                               (get-notes x))))))
 
 (defn inversion [i strlen]
-  (flatten 
-    (map (fn [x] (cons (- (- MAXNOTE MINNOTE) (first x))
+  (flatten
+    (map (fn [x] (cons (min MAXNOTE (- MAXNOTE (first x)))
                          (rest x)))
          (get-notes i))))
 
 (defn wiggle-up [i strlen]
-  (flatten 
-    (map 
-      (fn [x] (cons (+ (rand-int 3) (first x)) (rest x)))
+  (flatten
+    (map
+      (fn [x] (cons (min MAXNOTE (+ (rand-int 5) (first x))) (rest x)))
       (get-notes i))))
 
 (defn wiggle-down [i strlen]
-  (flatten 
-    (map 
-      (fn [x] (cons (+ (rand-int 3) (first x)) (rest x)))
+  (flatten
+    (map
+      (fn [x] (cons (max MINNOTE (- (first x) (rand-int 5))) (rest x)))
       (get-notes i))))
 
 (defn random []
-  (nth [wiggle-up wiggle-down sort-ascending sort-descending inversion] (rand-int 5)))
+  (nth [wiggle-up wiggle-down perfect-cadence sort-ascending sort-descending inversion]
+       (rand-int 6)))
