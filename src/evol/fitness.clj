@@ -1,6 +1,6 @@
 (ns evol.fitness)
 
-(require '[evol.utils :refer [HOLD]])
+(require '[evol.utils :refer :all])
 
 ;; SPECIES
 ;; =======
@@ -76,8 +76,8 @@
 (defn difference [l]
   (if (empty? (rest l))
     (list 0)
-    (reduce (fn [prev curr] 
-              (list curr (concat (second prev) (list (- curr (first prev)))))) 
+    (reduce (fn [prev curr]
+              (list curr (concat (second prev) (list (- curr (first prev))))))
             (list (first l) nil)
             l)))
 
@@ -106,6 +106,20 @@
           ;even-count (count evens)]
     (count evens)))
 
+(defn fit-perfect-candence-end [melody]
+  (Math/abs (- (Math/abs (second (reverse melody))) 5)))
+
+(defn fit-half-candence-middle [melody]
+  (let* [rm2 (reverse (drop (/ (count melody) 2) melody))]
+    (+
+      (Math/abs (- (Math/abs (first rm2)) 5))
+      (Math/abs (- (Math/abs (second rm2)) 0)))))
+
+(defn fit-rest-ratio [melody]
+  (let [{rests true others false} (group-by ishold? melody)]
+    (if (= rests 0) 0.6)
+    (Math/abs (- 0.4 (/ (count others) (count rests))))))
+
 ;; ******
 ;; Phrase
 ;; ******
@@ -116,10 +130,12 @@
 ;; ***
 
 (defn fitness-theme [melody key-]
-  (let [a (fit-start-on-tonic melody)
-        b (fit-end-on-tonic   melody)
-        c (* 2 (fit-on-beat-notes  melody))]
-    (+ a b c)))
+  (+ (* 2 (fit-start-on-tonic melody))
+     (* 2 (fit-end-on-tonic   melody))
+     (* 1 (fit-on-beat-notes  melody))
+     (* 3 (fit-rest-ratio     melody))
+     (* 2 (fit-perfect-candence-end melody))
+     (* 2 (fit-half-candence-middle melody))))
 
 (defn fitness [type- key-]
   (fn [melody]

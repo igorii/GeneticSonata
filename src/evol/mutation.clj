@@ -1,6 +1,6 @@
 (ns evol.mutation)
 
-(require '[evol.utils :refer [HOLD ishold? get-notes]])
+(require '[evol.utils :refer :all])
 
 (defn two-points [n]
   (let [a (rand-int n)
@@ -37,5 +37,23 @@
                         (sort (fn [a b] (< (first b) (first a)))
                               (get-notes x))))))
 
+(defn inversion [i strlen]
+  (flatten 
+    (map (fn [x] (cons (- (- MAXNOTE MINNOTE) (first x))
+                         (rest x)))
+         (get-notes i))))
+
+(defn wiggle-up [i strlen]
+  (flatten 
+    (map 
+      (fn [x] (cons (+ (rand-int 3) (first x)) (rest x)))
+      (get-notes i))))
+
+(defn wiggle-down [i strlen]
+  (flatten 
+    (map 
+      (fn [x] (cons (+ (rand-int 3) (first x)) (rest x)))
+      (get-notes i))))
+
 (defn random []
-  (nth [sort-ascending sort-descending] (rand-int 2)))
+  (nth [wiggle-up wiggle-down sort-ascending sort-descending inversion] (rand-int 5)))

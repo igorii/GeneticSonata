@@ -1,5 +1,7 @@
 (ns evol.utils)
 
+(def MAXNOTE 12)
+(def MINNOTE 0)
 (def HOLD -8)
 (defn ishold? [x] (= x HOLD))
 
