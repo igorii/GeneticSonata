@@ -95,8 +95,6 @@
   (let* [start (take (/ strlen 2) l)
          end   (drop (/ strlen 2) l)
          nrmls (map (fn [x] (normal-sum (difference x))) (list start end))]
-        (println start)
-        (println end)
     nrmls))
 
 (normal-halves (list 0 1 2 3  2 1 0 -1) 8)

@@ -102,7 +102,6 @@
 
 (defn -main []
   (defn l [iter oldpop strlen]
-    (println (count oldpop))
     (let* [fits       (map (fitness/fitness 'theme E) oldpop)
            fpop       (map list fits oldpop)
            best       (max1 fpop)]
