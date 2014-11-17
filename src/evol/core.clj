@@ -14,6 +14,8 @@
 (require '[evol.mutation :as mutation])
 (require '[evol.utils :refer :all])
 
+(def PHRASELEN (* 8 4))
+
 (defn max1 [l]
   (reduce (fn [best x] (if (< (first x) (first best)) x best)) (first l) l))
 (defn min1 [l]
@@ -28,7 +30,7 @@
   (defn f [notes lengths noteacc lengthacc]
     (if (empty? notes)
       (zip noteacc lengthacc)
-      (if (ishold? (first notes))
+      (if ( (first notes))
         (let [rlengths (reverse lengthacc)]
           (recur (rest notes) (rest lengths) noteacc (reverse (concat (list (+ 1/2 (first rlengths))) (rest rlengths)))))
           (recur (rest notes) (rest lengths) (concat noteacc (list (first notes))) (concat lengthacc (list 1/2))))))
@@ -98,8 +100,6 @@
       (where :time (bpm bpm-))
       play)))
 
-(def *strlen* (* 8 4))
-
 (defn -main []
   (defn l [iter oldpop strlen]
     (let* [fits       (map (fitness/fitness 'theme E) oldpop)
@@ -113,8 +113,8 @@
         (recur (- iter 1) (cons (second best) (create-next-gen fpop 100 8 strlen 0.7)) strlen))))
 
   (let* [population (init-population 100 0.4 *strlen* domain)
-         theme1 (l 100 population *strlen*)
-         theme2 (l 100 population *strlen*)]
+         theme1 (l 100 population PHRASELEN)
+         theme2 (l 100 population PHRASELEN)]
     (println theme1)
         (print "  Slope first half : ")
     (println (fitness/fit-slope-first-half theme1))

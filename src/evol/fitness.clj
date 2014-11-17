@@ -150,7 +150,7 @@
 
 ;; max = , min =
 (defn fit-rest-ratio [melody]
-  (let [{rests true others false} (group-by ishold? melody)]
+  (let [{rests true others false} (group-by hold? melody)]
     (if (= (count rests) 0) 1
       (Math/abs (- 0.2 (/ (count rests) (count melody)))))))
 
