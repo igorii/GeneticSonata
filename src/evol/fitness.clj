@@ -75,14 +75,33 @@
 
 (defn difference [l]
   (if (empty? (rest l))
-    (list 0)
-    (reduce (fn [prev curr]
+    nil
+    (second (reduce (fn [prev curr]
               (list curr (concat (second prev) (list (- curr (first prev))))))
             (list (first l) nil)
-            l)))
+            l))))
 
+(difference (list 0 1 2 3 2 1 0 4 0))
 
+(defn normalize [x] (if (= 0 x) 1 (/ x (Math/abs x))))
 
+(defn normalize-list [l]
+  (map normalize l))
+
+(defn normal-sum [l]
+  (reduce + 0 (normalize-list l)))
+
+(defn normal-halves [l strlen]
+  (let* [start (take (/ strlen 2) l)
+         end   (drop (/ strlen 2) l)
+         nrmls (map (fn [x] (normal-sum (difference x))) (list start end))]
+        (println start)
+        (println end)
+    nrmls))
+
+(normal-halves (list 0 1 2 3  2 1 0 -1) 8)
+
+(normalize -5)
 
 ;; ******
 ;; Themes
@@ -120,6 +139,12 @@
     (if (= rests 0) 0.6)
     (Math/abs (- 0.4 (/ (count others) (count rests))))))
 
+(defn fit-hill-shape [melody]
+  (let [c (count melody)
+        diff (normal-halves melody c)
+        sub  (+ (first diff) (second diff))]
+    (/ sub (normalize sub))))
+
 ;; ******
 ;; Phrase
 ;; ******
@@ -132,6 +157,7 @@
 (defn fitness-theme [melody key-]
   (+ (* 2 (fit-start-on-tonic melody))
      (* 2 (fit-end-on-tonic   melody))
+     (* 2 (fit-hill-shape     melody))
      (* 1 (fit-on-beat-notes  melody))
      (* 3 (fit-rest-ratio     melody))
      (* 2 (fit-perfect-candence-end melody))

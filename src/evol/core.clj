@@ -112,8 +112,8 @@
         (recur (- iter 1) (create-next-gen fpop 50 8 strlen 0.7) strlen))))
 
   (let* [population (init-population 50 0.7 8 domain)
-         theme1 (l 300 population 8)
-         theme2 (l 300 population 8)]
+         theme1 (l 100 population 8)
+         theme2 (l 100 population 8)]
     (println theme1)
     (println theme2)
     (play-sonata C G major 100 theme1 theme2 nil nil nil)))
