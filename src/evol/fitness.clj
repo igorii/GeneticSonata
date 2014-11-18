@@ -152,14 +152,16 @@
 (defn fit-rest-ratio [melody]
   (let [{rests true others false} (group-by hold? melody)]
     (if (= (count rests) 0) 1
-      (Math/abs (- 0.2 (/ (count rests) (count melody)))))))
+      (Math/abs (- 0.4 (/ (count rests) (count melody)))))))
+
+(fit-rest-ratio (list 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 HOLD HOLD HOLD HOLD))
 
 
 
 
 ;      (Math/abs (- 0.4 (/ (count others) (count rests)))))))
 
-(fit-rest-ratio (list HOLD HOLD HOLD HOLD HOLD 1 1 HOLD))
+(fit-rest-ratio (list HOLD HOLD 1 1 1 1 1 1))
 
 
 
@@ -187,7 +189,7 @@
      (* 3 (fit-slope-first-half       melody))
      (* 3 (fit-slope-second-half      melody))
      (* 1 (fit-on-beat-notes        melody))
-     (* 6 (fit-rest-ratio           melody))))
+     (* 400 (fit-rest-ratio           melody))))
      ;(* 1/7 (fit-perfect-candence-end melody))))
      ;(* 1/7 (fit-half-candence-middle melody))))
 

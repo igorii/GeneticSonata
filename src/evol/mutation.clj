@@ -13,8 +13,13 @@
         q (drop b i)]
     (list p q r)))
 
+;; TODO (on get-notes)
 (defn perfect-cadence [i strlen]
   (concat (take (- strlen 2) i) (list 5 0)))
+
+(perfect-cadence (list 1 2 3 4 5 6 7 8) 8)
+
+
 
 (defn split-three [i strlen]
   (let [points (two-points (+ 1 strlen))]
@@ -27,6 +32,7 @@
             (first (rest (rest substrings))))))
 
 (defn sort-ascending [i strlen]
+  (println "  mut ascending")
   (modify-substring i strlen
                     (fn [x]
                       (flatten
@@ -34,6 +40,7 @@
                               (get-notes x))))))
 
 (defn sort-descending [i strlen]
+  (println "  mut descending")
   (modify-substring i strlen
                     (fn [x]
                       (flatten
@@ -41,23 +48,35 @@
                               (get-notes x))))))
 
 (defn inversion [i strlen]
+  (println "  mut inversion")
   (flatten
     (map (fn [x] (cons (min MAXNOTE (- MAXNOTE (first x)))
                          (rest x)))
          (get-notes i))))
 
+(defn invert-rhythm [i strlen]
+  (println "  mut rhythm")
+  (map (fn [x] (if (chance 0.8)
+                 x
+                 (if (hold? x)
+                   (from-domain NOTERANGE)
+                   HOLD)))
+  i))
+
 (defn wiggle-up [i strlen]
+  (println "  mut wup")
   (flatten
     (map
       (fn [x] (cons (min MAXNOTE (+ (rand-int 5) (first x))) (rest x)))
       (get-notes i))))
 
 (defn wiggle-down [i strlen]
+  (println "  mut wdown")
   (flatten
     (map
       (fn [x] (cons (max MINNOTE (- (first x) (rand-int 5))) (rest x)))
       (get-notes i))))
 
 (defn random []
-  (nth [wiggle-up wiggle-down perfect-cadence sort-ascending sort-descending inversion]
-       (rand-int 6)))
+  (nth [invert-rhythm wiggle-up wiggle-down perfect-cadence sort-ascending sort-descending inversion]
+       (rand-int 7)))

@@ -2,8 +2,13 @@
 
 (def MAXNOTE 12)
 (def MINNOTE 0)
+(def NOTERANGE (into [] (range MINNOTE MAXNOTE)))
+
 (def HOLD -8)
 (defn hold? [x] (= x HOLD))
+
+(defn chance [n] (< (rand) n))
+(defn from-domain [d] (d (rand-int (- (.length d) 1))))
 
 (defn get-notes [i]
   (defn inner [i acc]
