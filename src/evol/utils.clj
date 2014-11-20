@@ -20,3 +20,9 @@
               next (drop-while hold? (rest i))]
           (recur next (concat acc (list note)))))))
   (inner i nil))
+
+(defn last-bar [melody]
+  (reverse (take 8 (reverse melody))))
+
+(defn first-bar [melody]
+  (take 8 melody))

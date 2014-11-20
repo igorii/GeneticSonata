@@ -72,5 +72,5 @@
       (get-notes i))))
 
 (defn random []
-  (nth [invert-rhythm wiggle-up wiggle-down perfect-cadence sort-ascending sort-descending inversion]
-       (rand-int 7)))
+  (nth [invert-rhythm wiggle-up wiggle-down sort-ascending sort-descending inversion]
+       (rand-int 6)))

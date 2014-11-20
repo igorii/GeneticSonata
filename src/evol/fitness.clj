@@ -72,6 +72,18 @@
 ;; ------------
 ;;
 
+(defn fit-repeating-pattern [melody length]
+  (defn l [s len i limit m]
+    (if (>= i limit)
+      (- 100 (reduce + 0 (map second (filter (fn [x] (< 1 (second x))) m))))
+      (let [sub (take len s)
+            n (get m sub 0)]
+        (recur (rest s) len (+ 1 i) limit (assoc m sub (+ n 1))))))
+  (l (map count (get-notes melody)) length 0 (+ 1 (- (count melody) length)) {}))
+
+
+(fit-repeating-pattern (list HOLD HOLD 1 HOLD HOLD 1 HOLD HOLD HOLD 1 HOLD 1 HOLD 1 HOLD HOLD 1 HOLD HOLD HOLD 1 HOLD 1 HOLD 1 HOLD) 6)
+
 
 (defn difference [l]
   (if (empty? (rest l))
@@ -96,7 +108,6 @@
     nrmls))
 
 (defn abs [x] (Math/abs x))
-
 
 (defn fit-melodic-intervals [melody]
   (let [notes (map first (get-notes melody))
@@ -190,6 +201,23 @@
     (if (= sub 0) 0
       (/ sub (normalize sub)))))
 
+(defn fit-tonic-heaviest-last [melody]
+  (let* [b (last-bar melody)
+         n (get-notes b)
+         m (reduce (fn [m x] (assoc m (first x) (+ (count x) (get m (first x) 0)))) {} n)
+         heaviest  (second (first (reverse (sort-by second m))))]
+        (- heaviest (get m 0 2))))
+
+(defn fit-tonic-heaviest-first [melody]
+  (let* [b (first-bar melody)
+         n (get-notes b)
+         m (reduce (fn [m x] (assoc m (first x) (+ (count x) (get m (first x) 0)))) {} n)
+         heaviest  (second (first (reverse (sort-by second m))))]
+        (- heaviest (get m 0 2))))
+
+
+(fit-tonic-heaviest-last (list 0 HOLD 2 HOLD 4 5 6 HOLD))
+
 ;; ******
 ;; Phrase
 ;; ******
@@ -200,18 +228,37 @@
 
 (defn fitness-theme [melody key-]
   (+ (* 5 (fit-start-on-tonic         melody))
-     (* 1(fit-end-on-tonic         melody))
+     (* 5(fit-end-on-tonic         melody))
 ;     (* 1/7 (fit-hill-shape           melody))))
-     (* 3 (fit-melodic-intervals    melody))
+     (* 5 (fit-melodic-intervals    melody))
      (* 3 (fit-slope-first-half       melody))
+     (* 1 (fit-tonic-heaviest-last       melody))
+     (* 1 (fit-tonic-heaviest-first       melody))
+     ;(* 1 (fit-repeating-pattern melody 5))
      (* 3 (fit-slope-second-half      melody))
      (* 1 (fit-on-beat-notes        melody))
-     (* 10 (fit-rest-ratio           melody))
+     (* 5 (fit-rest-ratio           melody))
      (* 1 (fit-perfect-candence-end melody))))
      ;(* 1/7 (fit-half-candence-middle melody))))
 
+(defn fitness-development [melody key-]
+   (+
+;     (* 1/7 (fit-hill-shape           melody))))
+     (* 8 (fit-melodic-intervals    melody))
+     (* 3 (fit-slope-first-half       melody))
+     ;(* 2 (fit-tonic-heaviest-last       melody))
+     ;(* 2 (fit-tonic-heaviest-first       melody))
+    ; (* 1 (fit-repeating-pattern melody 3))
+     (* 3 (fit-slope-second-half      melody))
+     (* 1 (fit-on-beat-notes        melody))
+     (* 5 (fit-rest-ratio           melody))))
+
+     ;(* 1/7 (fit-half-candence-middle melody))
+
 (defn fitness [type- key-]
   (fn [melody]
+   ; (println (get-notes melody))
     (cond
-      (= type- 'theme) (fitness-theme melody key-))))
+      (= type- 'theme)       (fitness-theme melody key-)
+      (= type- 'development) (fitness-development melody key-))))
 
