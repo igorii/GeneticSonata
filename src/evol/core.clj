@@ -1,6 +1,7 @@
 (ns evol.core
   (:use leipzig.scale, leipzig.melody, leipzig.live, leipzig.chord
         overtone.inst.sampled-piano
+        overtone.inst.synth
         [overtone.live :only [at ctl sample freesound-path]]))
 
 (require '[leipzig.melody :refer [bpm is phrase then times where with]])
@@ -33,6 +34,8 @@
         (let [rlengths (reverse lengthacc)]
           (recur (rest notes) (rest lengths) noteacc (reverse (concat (list (+ NOTEVAL (first rlengths))) (rest rlengths)))))
           (recur (rest notes) (rest lengths) (concat noteacc (list (first notes))) (concat lengthacc (list NOTEVAL))))))
+  (println melody)
+  (println lengths)
   (f melody lengths '() '()))
 
 ;; Initialize one single line of music (one individual)
@@ -92,22 +95,29 @@
       (where :time (bpm bpm-))
       play)))
 
+;(stop)
+;(mooger 50)
+
 (defn -main []
   (defn l [iter oldpop strlen]
     (let* [fits       (map (fitness/fitness 'theme E) oldpop)
            fpop       (map list fits oldpop)
            best       (max1 fpop)]
            ;worst      (min1 fpop)]
-      (println (list best))
+      (println (first best))
       (if (or (= 0 (first best)) (= 0 iter))
         ;(flatten (take 4 oldpop))
         (second best)
-        (recur (- iter 1) (cons (second best) (create-next-gen fpop 100 2 strlen 0.7)) strlen))))
+        (recur (- iter 1) (cons (second best) (create-next-gen fpop 300 2 strlen 0.7)) strlen))))
 
   (let* [;population (init-population 100 0.4 PHRASELEN domain)
-         theme1 (l 50 (init-population 100 0.4 PHRASELEN NOTERANGE) PHRASELEN)
-         theme2 (l 50 (init-population 100 0.4 PHRASELEN NOTERANGE) PHRASELEN)]
+         theme1 (l 50 (init-population 300 0.4 PHRASELEN NOTERANGE) PHRASELEN)
+         theme2 (l 50 (init-population 300 0.4 PHRASELEN NOTERANGE) PHRASELEN)]
     (println theme1)
+    (print "  Start on tonic : ")
+    (println (fitness/fit-start-on-tonic theme1))
+    (print "  End on tonic : ")
+    (println (fitness/fit-end-on-tonic theme1))
     (print "  Slope first half : ")
     (println (fitness/fit-slope-first-half theme1))
     (print "  Slope second half : ")
@@ -116,13 +126,19 @@
     (println (fitness/fit-rest-ratio theme1))
     (print "  Note on beat : ")
     (println (fitness/fit-on-beat-notes theme1))
+    (print "  Melodic interval : ")
+    (println (fitness/fit-melodic-intervals theme1))
     (println theme2)
     (println (fitness/fit-hill-shape theme2))
     (play-sonata C G major 120 theme1 theme2 nil nil nil)))
 
 (defn play-random []
-  (let [population (init-population 4 0.7 8 domain)]
-    (play-one C major 120 (flatten population))))
+  (let [population (init-population 4 0.4 PHRASELEN NOTERANGE)]
+    (play-one C major 120 (first population))))
+
+(play-random)
 
 (-main)
+
+;zipfs
 

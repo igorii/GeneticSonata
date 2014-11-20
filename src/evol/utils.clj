@@ -1,10 +1,10 @@
 (ns evol.utils)
 
-(def MAXNOTE 12)
-(def MINNOTE 0)
+(def MAXNOTE 8)
+(def MINNOTE -8)
 (def NOTERANGE (into [] (range MINNOTE MAXNOTE)))
 
-(def HOLD -8)
+(def HOLD (- MINNOTE 1))
 (defn hold? [x] (= x HOLD))
 
 (defn chance [n] (< (rand) n))

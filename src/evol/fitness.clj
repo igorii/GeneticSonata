@@ -44,17 +44,17 @@
 ;; * Average intervallic movement relative to velocity
 ;; * Frequency of note neighbours
 ;; * Std. Dev and variance of velocity of notes
-;; * There should be more notes than rests on the downbeat
-;; * General hill shape
+;;     * There should be more notes than rests on the downbeat
+;;     * General hill shape
 ;; * Average patterning
 ;; * Interval shape
 ;;
 ;; Theme Fitness
 ;; -------------
 ;;
-;; * Phrase fitness *plus*:
-;;   * Start on tonic
-;;   * End on tonic
+;;     * Phrase fitness *plus*:
+;;     * Start on tonic
+;;     * End on tonic
 ;;
 ;; Transition Fitness
 ;; ------------------
@@ -95,11 +95,29 @@
          nrmls (map (fn [x] (normal-sum (difference x))) (list start end))]
     nrmls))
 
+(defn abs [x] (Math/abs x))
+
+
+(defn fit-melodic-intervals [melody]
+  (let [notes (map first (get-notes melody))
+        c     (count notes)]
+    (if (= c 0)
+      0
+      (/ (reduce + 0 (map abs (difference notes))) c))))
+
+(difference (list 2 4 6 8))
+(fit-melodic-intervals (list 0 2 4 6))
+(map abs (difference
+ (map first (get-notes
+             (list 0 2 -9 3 -9 4 -9 4 5 8 8 6 8 8 -9 5 5 -9 4 -9 6 -9 8 -9 8 1 1 -9 0 -9 5 0)))))
+
+
+
 (defn fit-slope-first-half [melody]
   (let [n (map first (get-notes melody))
         c (count n)
         h (take (/ c 2) n)]
-    (- (- (/ c 2) 1)
+    (- (- (/ c 2) 4)
        (Math/abs (normal-sum (difference h)) )) ))
 
 (defn fit-slope-second-half [melody]
@@ -109,9 +127,19 @@
     (- (- (/ c 2) 1)
        (Math/abs (normal-sum (difference h)) )) ))
 
+(defn count-occurences [notes]
+(reduce #(assoc %1 %2 (inc (%1 %2 0))) {} notes))
 
+(difference (list 1 HOLD 2 HOLD 3 HOLD 6 HOLD))
 
+(def x (map first (get-notes (list 1 HOLD 2 HOLD 3 HOLD 6 HOLD))))
+(def os (count-occurences (difference x)))
 
+(map (fn [x] (println x)) os)
+
+(def g 0)
+
+(os 1)
 
 ;; ******
 ;; Themes
@@ -154,17 +182,6 @@
     (if (= (count rests) 0) 1
       (Math/abs (- 0.4 (/ (count rests) (count melody)))))))
 
-(fit-rest-ratio (list 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 HOLD HOLD HOLD HOLD))
-
-
-
-
-;      (Math/abs (- 0.4 (/ (count others) (count rests)))))))
-
-(fit-rest-ratio (list HOLD HOLD 1 1 1 1 1 1))
-
-
-
 ;; max = , min =
 (defn fit-hill-shape [melody]
   (let [c (count melody)
@@ -182,15 +199,15 @@
 ;; ***
 
 (defn fitness-theme [melody key-]
-  (+ (* 1 (fit-start-on-tonic         melody))
-     ;(* 1/7 (fit-end-on-tonic         melody))
+  (+ (* 5 (fit-start-on-tonic         melody))
+     (* 1(fit-end-on-tonic         melody))
 ;     (* 1/7 (fit-hill-shape           melody))))
-
+     (* 3 (fit-melodic-intervals    melody))
      (* 3 (fit-slope-first-half       melody))
      (* 3 (fit-slope-second-half      melody))
      (* 1 (fit-on-beat-notes        melody))
-     (* 400 (fit-rest-ratio           melody))))
-     ;(* 1/7 (fit-perfect-candence-end melody))))
+     (* 10 (fit-rest-ratio           melody))
+     (* 1 (fit-perfect-candence-end melody))))
      ;(* 1/7 (fit-half-candence-middle melody))))
 
 (defn fitness [type- key-]
