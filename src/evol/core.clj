@@ -34,8 +34,6 @@
         (let [rlengths (reverse lengthacc)]
           (recur (rest notes) (rest lengths) noteacc (reverse (concat (list (+ NOTEVAL (first rlengths))) (rest rlengths)))))
           (recur (rest notes) (rest lengths) (concat noteacc (list (first notes))) (concat lengthacc (list NOTEVAL))))))
-  (println melody)
-  (println lengths)
   (f melody lengths '() '()))
 
 ;; Initialize one single line of music (one individual)
@@ -66,14 +64,11 @@
      vol))
 
 ; Slightly less to type
-(saw-wave (note->hz :C5))
 
 ;; Let's make it even easier
 (defn saw2 [music-note]
     (saw-wave (olive/midi->hz (olive/note music-note))))
 
-;; Great!
-(saw2 :A4)
 (defmethod play-note :default [{midi :pitch}]
 
   (ctl sampled-piano :gate 0)
@@ -97,25 +92,46 @@
     (play-melody key- mode bpm- (into [] new-melody) new-lengths)))
 
 (defn i->phrase [melody]
+  ;(println melody)
   (let* [lengths     (map (fn [_] NOTEVAL) melody)
          both        (fold-holds melody lengths)
          new-melody  (map first both)
          new-lengths (map second both)]
     (phrase new-lengths new-melody)))
 
-(defn play-sonata [key1- key2- mode- bpm- theme1 theme2 development tr1 tr2]
-  (let [m1 (->> (i->phrase theme1) (where :pitch (comp key1- mode-)))
-        m2 (->> (i->phrase theme2) (where :pitch (comp key2- mode-)))
-        m2' (->> (i->phrase theme2) (where :pitch (comp key1- mode-)))
-        dev (->> (i->phrase development) (where :pitch (comp key2- mode-)))]
+(defn play-sonata [key1- key2- mode- bpm- chords theme1 theme2 development tr1 tr2]
+  (let [m1  (->> (i->phrase theme1)      (where :pitch (comp key1- mode-)))
+        m2  (->> (i->phrase theme2)      (where :pitch (comp key1- mode-)))
+        m2' (->> (i->phrase theme2)      (where :pitch (comp key2- mode-)))
+        dev (->> (i->phrase development) (where :pitch (comp key2- mode-)))
+        bdev (flatten (repeat (/ (count dev) (count chords)) chords))
+        bdev1 (->> (i->phrase bdev)                                         (where :part :bass) (where :pitch (comp key2- mode-)))
+        bdev2 (->> (i->phrase (map (fn [x] (if (hold? x) x (+ 3 x))) bdev)) (where :part :bass) (where :pitch (comp key2- mode-)))
+        bdev3 (->> (i->phrase (map (fn [x] (if (hold? x) x (+ 5 x))) bdev)) (where :part :bass) (where :pitch (comp key2- mode-)))
+        b1  (->> (i->phrase chords)                                         (where :part :bass) (where :pitch (comp key1- mode-)))
+        b2  (->> (i->phrase (map (fn [x] (if (hold? x) x (+ 3 x))) chords)) (where :part :bass) (where :pitch (comp key1- mode-)))
+        b3  (->> (i->phrase (map (fn [x] (if (hold? x) x (+ 5 x))) chords)) (where :part :bass) (where :pitch (comp key1- mode-)))
+        b1' (->> (i->phrase chords)                                         (where :part :bass) (where :pitch (comp key2- mode-)))
+        b2' (->> (i->phrase (map (fn [x] (if (hold? x) x (+ 3 x))) chords)) (where :part :bass) (where :pitch (comp key2- mode-)))
+        b3' (->> (i->phrase (map (fn [x] (if (hold? x) x (+ 5 x))) chords)) (where :part :bass) (where :pitch (comp key2- mode-)))
+        ]
+    (println "Playing!")
+    (println (count bdev))
+    (println (count dev))
     (->>
-      m1
-      (then m2)
-     (then dev)
-     (then m1)
-     (then m2')
-     (then m1)
-     (then m2')
+      ;m1
+      ;(then m2)
+     ;(then dev)
+      (with       m1 b1 b2 b3 )
+      (then (with m1 b1 b2 b3 ))
+      (then (with m2' b1' b2' b3' ))
+      (then (with m2' b1' b2' b3' ))
+      (then (with dev bdev1 bdev2 bdev3 ))
+      (then (with m1 b1 b2 b3 ))
+      (then (with m2 b1 b2 b3 ))
+  ;   (then m2')
+   ;  (then m1)
+   ;  (then m2')
       ;(then m1)
       ;(then m2)
       ;(then m2')
@@ -127,40 +143,24 @@
       ;(then m2)
       ;(then m2')
       ;(then m1)
-      (where :part (is :melody))
+      ;(where :part (is :melody))
+
+      (where :duration (bpm bpm-))
       (where :time (bpm bpm-))
       play)))
 
-(stop)
-;(mooger 50)
-;(assoc {} "hi" 5)
-(defn -main []
-  (defn l [iter oldpop strlen]
-    (let* [fits       (map (fitness/fitness 'theme E) oldpop)
-           fpop       (map list fits oldpop)
-           best       (max1 fpop)]
-           ;worst      (min1 fpop)]
-      (println (first best))
-      (if (or (= 0 (first best)) (= 0 iter))
-        ;(flatten (take 4 oldpop))
-        (second best)
-        (recur (- iter 1) (cons (second best) (create-next-gen fpop 100 7 strlen 0.7)) strlen))))
 
-  (let* [;population (init-population 100 0.4 PHRASELEN domain)
-         theme1 (l 50 (init-population 100 0.4 PHRASELEN NOTERANGE) PHRASELEN)
-         theme2 (l 50 (init-population 100 0.4 PHRASELEN NOTERANGE) PHRASELEN)
-         init-measure-pop (concat (list (first-bar theme1))
-                                  (list (last-bar theme1))
-                                  (list (first-bar theme2))
-                                  (list (last-bar theme2))
-                                  (init-population 30 0.4 8 NOTERANGE))
-         dev-measure-pop (refine-measure-pop init-measure-pop 44)
-         development (development-from-pop dev-measure-pop 8)]
+(overtone/definst beep [freq 440 dur 1.0]
+  (-> freq
+      overtone/saw
+      (* (overtone/env-gen (overtone/perc 0.05 dur) :action overtone/FREE))))
 
-    (print-fitness-info theme1)
-    (print-fitness-info theme2)
-    (println dev-measure-pop)
-    (play-sonata C G major 110 theme1 theme2 (flatten development) nil nil)))
+(defmethod live/play-note :default [{midi :pitch seconds :duration}]
+  (-> midi overtone/midi->hz (beep seconds)))
+
+(defmethod live/play-note :bass [{midi :pitch}]
+  ; Halving the frequency drops the note an octave.
+  (-> midi overtone/midi->hz (/ 2) (beep 0.5)))
 
 (defn refine-measure-pop [init-pop popsize]
    (defn l [iter oldpop strlen]
@@ -170,8 +170,6 @@
         oldpop
         (recur (- iter 1) (create-next-gen fpop popsize 4 strlen 0.7) strlen))))
   (l 20 init-pop 8))
-
-;(refine-measure-pop (list (list 0 0 0 0 0 0 0 0) (list 0 0 0 0 0 0 0 0) (list 0 0 0 0 0 0 0 0) (list 0 0 0 0 0 0 0 0)) 4)
 
 (defn print-fitness-info [melody]
    (println melody)
@@ -195,10 +193,49 @@
 (defn development-from-pop [population dev-length]
   (map (fn [x] (first (shuffle population))) (range 0 dev-length)))
 
+(defn -main []
+  (defn l [iter oldpop strlen]
+    (let* [fits       (map (fitness/fitness 'theme E) oldpop)
+           fpop       (map list fits oldpop)
+           best       (max1 fpop)]
+           ;worst      (min1 fpop)]
+      (println (first best))
+      (if (or (= 0 (first best)) (= 0 iter))
+        ;(flatten (take 4 oldpop))
+        (second best)
+        (recur (- iter 1
+                  ) (cons (second best) (create-next-gen fpop 100 7 strlen 0.7)) strlen))))
+
+  (let* [;population (init-population 100 0.4 PHRASELEN domain)
+         theme1 (l 50 (init-population 100 0.4 PHRASELEN NOTERANGE) PHRASELEN)
+         theme2 (l 50 (init-population 100 0.4 PHRASELEN NOTERANGE) PHRASELEN)
+         init-measure-pop (concat (list (first-bar theme1))
+                                  (list (last-bar theme1))
+                                  (list (first-bar theme2))
+                                  (list (last-bar theme2))
+                                  (init-population 30 0.4 8 NOTERANGE))
+         dev-measure-pop (refine-measure-pop init-measure-pop 44)
+         development (development-from-pop dev-measure-pop 8)]
+
+    (print-fitness-info theme1)
+    (print-fitness-info theme2)
+    (println dev-measure-pop)
+    (play-sonata C G major 100
+                 (flatten (map (fn [x] (cons (- x 8) (repeat 3 HOLD))) chords))
+                 theme1 theme2 (flatten development) nil nil)))
+
+(def chords (list 0 5 3 4))
+
+;(play-sonata G (fn [x] (+ 5 (G))) major 100
+;             (flatten (map (fn [x] (repeat 4 x)) chords))
+;             (flatten (map (fn [x] (repeat 4 x)) chords))
+;             nil nil nil)
+
+;(phrase (list 1/2 1/2 1/2 1/2) (list 1 2 3 4) )
+
 ;(def t1 (list 0 3 0 -9 1 2 5 6 8 8 6 6 6 5 4 1))
 ;(def t2 (list 0 0 1 2 2 7 8 8 8 7 6 -9 -9 -9 5 1))
 ;(play-sonata C G major 110 t1 t2 nil nil nil)
-
 
 ;(define l (list 0 HOLD 1 HOLD HOLD 2 HOLD 3 HOLD 4 HOLD))
 
@@ -207,12 +244,32 @@
 ;    (play-one C major 60 (first population))))
 
 
-;(stop)
-;(play-random)
+chords
+
+
+(sampled-piano (olive/note :c3))
+(sampled-piano (olive/note :e3))
+(sampled-piano (olive/note :g3))
+
+
+(sampled-piano (olive/note :a3))
+(sampled-piano (olive/note :c3))
+(sampled-piano (olive/note :e3))
+
+
+(sampled-piano (olive/note :b3))
+(sampled-piano (olive/note :d3))
+(sampled-piano (olive/note :f3))
+
+
+
+(+ 1 2)
+
+(stop)
+1
 
 (-main)
 
-(sampled-piano (olive/note :C4))
 
 ;zipfs
 
