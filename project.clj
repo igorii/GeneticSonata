@@ -1,4 +1,4 @@
-(defproject goldberg "0.1.0-SNAPSHOT"
+(defproject genmusic "0.1.0-SNAPSHOT"
   :description "Evolution of music"
   :main evol.core
   :dependencies	[

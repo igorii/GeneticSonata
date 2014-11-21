@@ -1,5 +1,8 @@
 (ns evol.utils)
 
+(def CHORDS (list 0 5 3 4))
+(def PHRASELEN (* 8 2))
+(def NOTEVAL 1/2)
 (def MAXNOTE 8)
 (def MINNOTE -8)
 (def NOTERANGE (into [] (range MINNOTE MAXNOTE)))
@@ -26,3 +29,10 @@
 
 (defn first-bar [melody]
   (take 8 melody))
+
+(defn max1 [l]
+  (reduce (fn [best x] (if (< (first x) (first best)) x best)) (first l) l))
+(defn min1 [l]
+  (reduce (fn [worst x] (if (> (first x) (first worst)) x worst)) (first l) l))
+
+(defn zip [xs ys] (map list xs ys))
