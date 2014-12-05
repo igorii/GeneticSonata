@@ -1,14 +1,13 @@
 (ns evol.core
   (:use leipzig.scale, leipzig.melody, leipzig.live, leipzig.chord
-       ; overtone.inst.sampled-piano
         overtone.inst.piano
-        [overtone.live :only [at ctl sample freesound-path]]))
+        overtone.inst.synth))
 
 (require '[leipzig.melody :refer [bpm is phrase then times where with]])
 (require '[overtone.live :as overtone]
          '[leipzig.live :as live]
+         '[leipzig.chord :as chord]
          '[leipzig.scale :as scale])
-(require '[overtone.live :as olive])
 
 (require '[evol.fitness :as fitness])
 (require '[evol.crossover :as crossover])
@@ -16,6 +15,59 @@
 
 (require '[evol.mutation :as mutation])
 (require '[evol.utils :refer :all])
+
+
+(def dull-partials
+  [
+   0.56
+   0.92
+   1.19
+   1.71
+   2
+   2.74
+   3
+   3.76
+   4.07])
+
+;; http://www.soundonsound.com/sos/Aug02/articles/synthsecrets0802.asp
+;; (fig 8)
+(def partials
+  [
+   0.5
+   1
+   3
+   4.2
+   5.4
+   6.8])
+
+;; we make a bell by combining a set of sine waves at the given
+;; proportions of the frequency. Technically not really partials
+;; as for the 'pretty bell' I stuck mainly with harmonics.
+;; Each partial is mixed down proportional to its number - so 1 is
+;; louder than 6. Higher partials are also supposed to attenuate
+;; quicker but setting the release didn't appear to do much.
+
+(overtone/defcgen bell-partials
+  "Bell partial generator"
+  [freq {:default 440 :doc "The fundamental frequency for the partials"}
+   dur  {:default 1.0 :doc "Duration multiplier. Length of longest partial will
+                            be dur seconds"}
+   partials {:default [0.5 1 2 4] :doc "sequence of frequencies which are
+                                        multiples of freq"}]
+  "Generates a series of progressively shorter and quieter enveloped sine waves
+  for each of the partials specified. The length of the envolope is proportional
+  to dur and the fundamental frequency is specified with freq."
+  (:ar
+   (apply +
+          (map
+           (fn [partial proportion]
+             (let [env      (overtone/env-gen (overtone/perc 0.01 (* dur proportion)))
+                   vol      (/ proportion 2)
+                   overtone (* partial freq)]
+               (* env vol (overtone/sin-osc overtone))))
+           partials ;; current partial
+           (iterate #(/ % 2) 1.0)  ;; proportions (1.0  0.5 0.25)  etc
+           ))))
 
 (defn fold-holds [melody lengths]
   (defn f [notes lengths noteacc lengthacc]
@@ -26,6 +78,9 @@
           (recur (rest notes) (rest lengths) noteacc (reverse (concat (list (+ NOTEVAL (first rlengths))) (rest rlengths)))))
           (recur (rest notes) (rest lengths) (concat noteacc (list (first notes))) (concat lengthacc (list NOTEVAL))))))
   (f melody lengths '() '()))
+
+;(stop)
+;(ks-stringer 60)
 
 ;; Initialize one single line of music (one individual)
 (defn init-one [hold-rate length domain]
@@ -74,6 +129,7 @@
 
 (defn play-sonata [key1- key2- mode- bpm- chords theme1 theme2 development tr1 tr2]
   (let [m1  (->> (i->phrase theme1)      (where :pitch (comp key1- mode-)) (where :part (is :default)))
+        m1' (->> (i->phrase theme1)      (where :pitch (comp key2- mode-)) (where :part (is :default)))
         m2  (->> (i->phrase theme2)      (where :pitch (comp key1- mode-)) (where :part (is :default)))
         m2' (->> (i->phrase theme2)      (where :pitch (comp key2- mode-)) (where :part (is :default)))
         dev (->> (i->phrase development) (where :pitch (comp key2- mode-)) (where :part (is :default)))
@@ -93,29 +149,29 @@
     (println (count dev))
     (->>
      m1
-      (then (with m1 b1 b2 b3 ))
-      (then (with m1 b1 b2 b3 ))
-      (then (with m2' b1' b2' b3' ))
-      (then (with m2' b1' b2' b3' ))
-      (then (with dev bdev1 bdev2 bdev3 ))
-      (then (with m1 b1 b2 b3 ))
-      (then (with m2 b1 b2 b3 ))
+      (then m1); (with m1 b1)); b2 b3 ))
+      (then m2'); (with m2' b1')); b2 b3 ))
+      (then m1'); (with m1' b1')); b2' b3' ))
+      (then m2'); (with m2' b1')); b2' b3' ))
+      (then dev); (with dev bdev1)); bdev2 bdev3 ))
+      (then m1); (with m1 b1)); b2)); b3))
+      (then m2); (with m2 b1)); b2)); b3))
       (where :duration (bpm bpm-))
       (where :time (bpm bpm-))
       live/play)))
 
-(olive/definst saw-wave [freq 440 attack 0.01 sustain 0.2 release 0.1 vol 0.4]
-  (* (olive/env-gen (olive/env-lin attack sustain release) 1 1 0 1 olive/FREE)
-     (olive/saw freq)
+(overtone/definst saw-wave [freq 440 attack 0.01 sustain 0.2 release 0.1 vol 0.4]
+  (* (overtone/env-gen (overtone/env-lin attack sustain release) 1 1 0 1 overtone/FREE)
+     (overtone/saw freq)
      vol))
 
 (defn saw2 [music-note]
-    (saw-wave (olive/midi->hz (olive/note music-note))))
+    (saw-wave (overtone/midi->hz (overtone/note music-note))))
 
-(overtone/definst ping [freq 440]
-  (-> freq
-      overtone/square
-      (* (overtone/env-gen (overtone/perc) :action overtone/FREE))))
+;(overtone/definst ping [freq 440]
+;  (-> freq
+;      overtone/square
+;      (* (overtone/env-gen (overtone/perc) :action overtone/FREE))))
 
 (overtone/definst seeth [freq 440 dur 1.0]
   (-> freq
@@ -127,25 +183,41 @@
       overtone/saw
       (* (overtone/env-gen (overtone/perc 0.05 dur) :action overtone/FREE))))
 
+(overtone/definst dull-bell [freq 220 dur 1.0 amp 1.0]
+  (let [snd (* amp (bell-partials freq dur dull-partials))]
+    ;(overtone/detect-silence snd :action overtone/FREE)
+    snd))
+
+(overtone/definst pretty-bell [freq 220 dur 1.0 amp 1.0]
+  (let [snd (* amp (bell-partials freq dur partials))]
+    (overtone/detect-silence snd :action overtone/FREE)
+    snd))
+
+(dull-bell)
+(pretty-bell (overtone/note :D2))
+
 ;(beep 60)
 ;(saw2 60)
 ;(piano 60)
 ;(seeth 60)
 ;(ping 60)
+;(simple-flute)
+;(cs80lead)
 
 (->>
- (phrase [1/2 1/2 1/2 1/2] [1 2 3 4])
- (where :part (is :default))
+ (with (->> (phrase [1/2 1/2 1/2 1/2] [0 3 5 0]) (where :part (is :default)))
+ (->> (phrase [1 1] [0 0]) (where :part (is :bass))))
  (where :time (bpm 90))
  (where :duration (bpm 90))
  (where :pitch (comp C major))
  live/play)
+(stop)
 
 (defmethod live/play-note :default [{midi :pitch seconds :duration}]
-  (-> midi overtone/midi->hz beep))
+  (-> midi overtone/midi->hz (organ :volume 0.7 :dur seconds)))
 
-(defmethod live/play-note :bass [{midi :pitch}]
-  (-> midi overtone/midi->hz (/ 2) (seeth 1/2)))
+(defmethod live/play-note :bass [{midi :pitch seconds :duration}]
+  (-> midi overtone/midi->hz (/ 2) (organ :volume 0.55 :dur seconds)))
 
 (defn refine-measure-pop [init-pop popsize]
    (defn l [iter oldpop strlen]
@@ -153,11 +225,11 @@
            fpop       (map list fits oldpop)]
       (if (= 0 iter)
         oldpop
-        (recur (- iter 1) (create-next-gen fpop popsize 4 strlen 0.7) strlen))))
-  (l 20 init-pop 8))
+        (recur (- iter 1) (create-next-gen fpop popsize 4 strlen 0.9) strlen))))
+  (l 10 init-pop 8))
 
 (defn print-fitness-info [melody]
-   (println melody)
+   (print-melody melody)
     (print "  Start on tonic : ")
     (println (fitness/fit-start-on-tonic melody))
     (print "  End on tonic : ")
@@ -196,7 +268,7 @@
                                   (list (first-bar theme2))
                                   (list (last-bar  theme2))
                                   (init-population 30 0.4 8 NOTERANGE))
-         dev-measure-pop (refine-measure-pop init-measure-pop 44)
+         dev-measure-pop (refine-measure-pop init-measure-pop 34)
          development     (development-from-pop dev-measure-pop 8)]
 
     (print-fitness-info theme1)
@@ -206,19 +278,101 @@
                  (flatten (map (fn [x] (cons x (repeat 3 HOLD))) CHORDS))
                  theme1 theme2 (flatten development) nil nil)))
 
-;(sampled-piano (olive/note :c3))
-;(sampled-piano (olive/note :e3))
-;(sampled-piano (olive/note :g3))
 
-;(sampled-piano (olive/note :a3))
-;(sampled-piano (olive/note :c3))
-;(sampled-piano (olive/note :e3))
+;(sampled-piano (overtone/note :c3))
+;(sampled-piano (overtone/note :e3))
+;(sampled-piano (overtone/note :g3))
 
-;(sampled-piano (olive/note :b3))
-;(sampled-piano (olive/note :d3))
-;(sampled-piano (olive/note :f3))
+;(sampled-piano (overtone/note :a3))
+;(sampled-piano (overtone/note :c3))
+;(sampled-piano (overtone/note :e3))
+
+;(sampled-piano (overtone/note :b3))
+;(sampled-piano (overtone/note :d3))
+;(sampled-piano (overtone/note :f3))
+
+;(play-one C major 100 (list 1 HOLD 2 HOLD 3 HOLD 4 HOLD))
+;(play-one C minor 100 (list 6 5 6 HOLD 2 HOLD 1 HOLD 6 5 6 HOLD 2 HOLD 1 HOLD 6 5 6 HOLD HOLD HOLD 2 HOLD 0 HOLD 1 HOLD HOLD HOLD))
+;(play-one C minor 100 (list 8 8 9 HOLD 5 HOLD 4 HOLD 6 5 6 HOLD 2 HOLD 1 HOLD 6 5 6 HOLD HOLD HOLD 2 HOLD 0 HOLD 1 HOLD HOLD HOLD))
+
+;((fn [] (let [h HOLD] (play-one C minor 100 (list 0 h 1 h 2 h 3 h 4 h)))))
+
+(saw2 60)
+(doseq [note (overtone/chord :E3 :major7)] (piano note))
+
+(defn play-chord [chord]
+  (doseq [note chord] (plink note)))
+
+(play-chord (overtone/chord :C4 :major))
+(let [time (overtone/now)]
+  (overtone/at time (play-chord (overtone/chord :C3 :major)))
+  (overtone/at (+ 1000 time) (play-chord (overtone/chord :C3 :major7)))
+  (overtone/at (+ 2000 time) (play-chord (overtone/chord :E3 :minor)))
+  (overtone/at (+ 3000 time) (play-chord (overtone/chord :A2 :minor))))
+
+(map organ [60 63 65 67])
+(overtone/definst organ [freq 440 dur 1 land 0.9 volume 1]
+  (-> (overtone/square freq)
+      (+ (overtone/sin-osc (* 3 freq) (overtone/sin-osc 6)))
+      (+ (overtone/sin-osc (* 1/2 freq) (overtone/sin-osc 3)))
+      (* (overtone/env-gen (overtone/adsr 0.03 0.3 0.4) (overtone/line:kr 1 0 dur) :action overtone/FREE))
+      (* (overtone/sin-osc (* freq 2)))
+      (overtone/clip2 (overtone/line:kr 1 land 16))
+      (* volume)))
+
+(overtone/definst plink [freq 440 dur 1 volume 1.0]
+  (-> (overtone/sin-osc freq)
+      (+ (* 1/3 (overtone/sin-osc (* freq 3))))
+      (+ (* 1/5 (overtone/sin-osc (* freq 5.1))))
+      (+ (* 1/6 (overtone/sin-osc (* freq 6.1))))
+      (+ (* 1/8 (overtone/sin-osc (* freq 7.1))))
+      (+ (* 1/8 (overtone/sin-osc (* freq 8))))
+      (* (overtone/env-gen (overtone/perc 0.01 0.4) :action overtone/FREE))
+      (* volume)))
+
+(overtone/definst bass2 [freq 110 dur 1 volume 1.0]
+  (-> (overtone/saw freq)
+      (overtone/rlpf (overtone/line:kr 2000 freq dur) 0.5)
+      (* (overtone/env-gen (overtone/perc 0.1 dur) :action overtone/FREE))
+      (* volume)))
+
+(organ (overtone/note :C4))
 
 (-main)
 (stop)
-;zipfs
 
+
+
+(import '(javax.swing JFrame JLabel JTextField JButton)
+        '(java.awt.event ActionListener)
+        '(java.awt GridLayout))
+
+(let [frame (new JFrame "Celsius Converter")
+      temp-text (new JTextField)
+      celsius-label (new JLabel "Celsius")
+      convert-button (new JButton "Convert")
+      fahrenheit-label (new JLabel "Fahrenheit")]
+    (. convert-button
+        (addActionListener
+           (proxy [ActionListener] []
+                (actionPerformed [evt]
+                    (let [c (Double/parseDouble (. temp-text (getText)))]
+                      (. fahrenheit-label
+                         (setText (str (+ 32 (* 1.8 c)) " Fahrenheit"))))))))
+    (doto frame
+                ;(.setDefaultCloseOperation (JFrame/EXIT_ON_CLOSE)) ;uncomment this line to quit app on frame close
+                (.setLayout (new GridLayout 2 2 3 3))
+                (.add temp-text)
+                (.add celsius-label)
+                (.add convert-button)
+                (.add fahrenheit-label)
+                (.setSize 600 180)
+                (.setVisible true)))
+
+
+
+
+((organ :dur 1/2) 60)
+
+;zipfs
+(+ 1 2)

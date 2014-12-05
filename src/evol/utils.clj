@@ -1,6 +1,6 @@
 (ns evol.utils)
 
-(def CHORDS (list 0 5 3 4))
+(def CHORDS (list 0 3 4 0))
 (def PHRASELEN (* 8 2))
 (def NOTEVAL 1/2)
 (def MAXNOTE 8)
@@ -36,3 +36,6 @@
   (reduce (fn [worst x] (if (> (first x) (first worst)) x worst)) (first l) l))
 
 (defn zip [xs ys] (map list xs ys))
+
+(defn print-melody [melody]
+  (apply str (map (fn [x] (if (hold? x) "_" (str x))) melody)))

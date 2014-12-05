@@ -191,7 +191,7 @@
 (defn fit-rest-ratio [melody]
   (let [{rests true others false} (group-by hold? melody)]
     (if (= (count rests) 0) 1
-      (Math/abs (- 0.4 (/ (count rests) (count melody)))))))
+      (Math/abs (- 0.3 (/ (count rests) (count melody)))))))
 
 ;; max = , min =
 (defn fit-hill-shape [melody]
@@ -242,18 +242,34 @@
      ;(* 1/7 (fit-half-candence-middle melody))))
 
 (defn fitness-development [melody key-]
-   (+
+  (+ (* 5 (fit-start-on-tonic         melody))
+     (* 5(fit-end-on-tonic         melody))
 ;     (* 1/7 (fit-hill-shape           melody))))
-     (* 8 (fit-melodic-intervals    melody))
+     (* 5 (fit-melodic-intervals    melody))
      (* 3 (fit-slope-first-half       melody))
-     ;(* 2 (fit-tonic-heaviest-last       melody))
-     ;(* 2 (fit-tonic-heaviest-first       melody))
-    ; (* 1 (fit-repeating-pattern melody 3))
+     (* 1 (fit-tonic-heaviest-last       melody))
+     (* 1 (fit-tonic-heaviest-first       melody))
+     ;(* 1 (fit-repeating-pattern melody 5))
      (* 3 (fit-slope-second-half      melody))
      (* 1 (fit-on-beat-notes        melody))
-     (* 5 (fit-rest-ratio           melody))))
+     (* 5 (fit-rest-ratio           melody))
+     (* 1 (fit-perfect-candence-end melody))))
+     ;(* 1/7 (fit-half-candence-middle melody))))
 
-     ;(* 1/7 (fit-half-candence-middle melody))
+;(defn fitness-development [melody key-]
+;  (+ ;(* 5 (fit-start-on-tonic         melody))
+     ;(* 5(fit-end-on-tonic         melody))
+;     (* 1/7 (fit-hill-shape           melody))))
+;     (* 5 (fit-melodic-intervals    melody))
+;     (* 3 (fit-slope-first-half       melody))
+     ;(* 1 (fit-tonic-heaviest-last       melody))
+     ;(* 1 (fit-tonic-heaviest-first       melody))
+     ;(* 1 (fit-repeating-pattern melody 5))
+;     (* 3 (fit-slope-second-half      melody))
+;     (* 1 (fit-on-beat-notes        melody))
+;     (* 5 (fit-rest-ratio           melody))
+;     (* 1 (fit-perfect-candence-end melody))))
+     ;(* 1/7 (fit-half-candence-middle melody)))
 
 (defn fitness [type- key-]
   (fn [melody]
