@@ -4,5 +4,6 @@
   :dependencies	[
     [org.clojure/clojure "1.5.1"]
     [overtone "0.9.1" :exclusions [org.clojure/clojure]]
+    ;[seesaw "1.4.5-SNAPSHOT"]
     [quil "1.6.0"]
     [leipzig "0.8.0"]])

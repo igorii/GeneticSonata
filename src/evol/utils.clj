@@ -1,6 +1,6 @@
 (ns evol.utils)
 
-(def CHORDS (list 0 3 4 0))
+(def CHORDS (list 0 3 5 4))
 (def PHRASELEN (* 8 2))
 (def NOTEVAL 1/2)
 (def MAXNOTE 8)
@@ -9,6 +9,8 @@
 
 (def HOLD (- MINNOTE 1))
 (defn hold? [x] (= x HOLD))
+(def REST (+ MAXNOTE 1))
+(defn rest? [x] (= x REST))
 
 (defn chance [n] (< (rand) n))
 (defn from-domain [d] (d (rand-int (- (.length d) 1))))
@@ -37,5 +39,5 @@
 
 (defn zip [xs ys] (map list xs ys))
 
-(defn print-melody [melody]
-  (apply str (map (fn [x] (if (hold? x) "_" (str x))) melody)))
+(defn melody->str [melody]
+  (apply str (map (fn [x] (if (hold? x) "_" (if (rest? x) "~" (str x)))) melody)))

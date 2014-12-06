@@ -120,9 +120,7 @@
 (fit-melodic-intervals (list 0 2 4 6))
 (map abs (difference
  (map first (get-notes
-             (list 0 2 -9 3 -9 4 -9 4 5 8 8 6 8 8 -9 5 5 -9 4 -9 6 -9 8 -9 8 1 1 -9 0 -9 5 0)))))
-
-
+             (list 0 2 -9 3 -9 4 -9 4 5 8 9 8 6 8 8 -9 5 5 -9 4 -9 6 -9 8 -9 8 1 1 -9 0 -9 5 0)))))
 
 (defn fit-slope-first-half [melody]
   (let [n (map first (get-notes melody))
@@ -188,8 +186,13 @@
       (Math/abs (- (Math/abs (second rm2)) 0)))))
 
 ;; max = , min =
+(defn fit-hold-ratio [melody]
+  (let [{holds true others false} (group-by hold? melody)]
+    (if (= (count holds) 0) 1
+      (Math/abs (- 0.3 (/ (count holds) (count melody)))))))
+
 (defn fit-rest-ratio [melody]
-  (let [{rests true others false} (group-by hold? melody)]
+  (let [{rests true others false} (group-by rest? melody)]
     (if (= (count rests) 0) 1
       (Math/abs (- 0.3 (/ (count rests) (count melody)))))))
 
@@ -237,7 +240,8 @@
      ;(* 1 (fit-repeating-pattern melody 5))
      (* 3 (fit-slope-second-half      melody))
      (* 1 (fit-on-beat-notes        melody))
-     (* 5 (fit-rest-ratio           melody))
+     ;(* 5 (fit-rest-ratio           melody))
+     (* 5 (fit-hold-ratio           melody))
      (* 1 (fit-perfect-candence-end melody))))
      ;(* 1/7 (fit-half-candence-middle melody))))
 
@@ -252,7 +256,8 @@
      ;(* 1 (fit-repeating-pattern melody 5))
      (* 3 (fit-slope-second-half      melody))
      (* 1 (fit-on-beat-notes        melody))
-     (* 5 (fit-rest-ratio           melody))
+     ;(* 5 (fit-rest-ratio           melody))
+     (* 5 (fit-hold-ratio           melody))
      (* 1 (fit-perfect-candence-end melody))))
      ;(* 1/7 (fit-half-candence-middle melody))))
 
@@ -270,6 +275,25 @@
 ;     (* 5 (fit-rest-ratio           melody))
 ;     (* 1 (fit-perfect-candence-end melody))))
      ;(* 1/7 (fit-half-candence-middle melody)))
+
+     (defn print-fitness-info [melody]
+    (println (melody->str melody))
+    (print "  Start on tonic : ")
+    (println (fit-start-on-tonic melody))
+    (print "  End on tonic : ")
+    (println (fit-end-on-tonic melody))
+    (print "  Slope first half : ")
+    (println (fit-slope-first-half melody))
+    (print "  Slope second half : ")
+    (println (fit-slope-second-half melody))
+    (print "  Rest Ratio : ")
+    (println (fit-rest-ratio melody))
+    (print "  Note on beat : ")
+    (println (fit-on-beat-notes melody))
+    (print "  Melodic interval : ")
+    (println (fit-melodic-intervals melody))
+    (print "  Fit repeating patter : ")
+    (println (fit-repeating-pattern melody 5)))
 
 (defn fitness [type- key-]
   (fn [melody]
