@@ -72,18 +72,25 @@
 ;; ------------
 ;;
 
-(defn fit-repeating-pattern [melody length]
+(defn fit-repeating-rhythm [melody length]
   (defn l [s len i limit m]
     (if (>= i limit)
-      (- 100 (reduce + 0 (map second (filter (fn [x] (< 1 (second x))) m))))
+      (- 0 (reduce + 0 (map second (filter (fn [x] (< 1 (second x))) m))))
       (let [sub (take len s)
             n (get m sub 0)]
         (recur (rest s) len (+ 1 i) limit (assoc m sub (+ n 1))))))
   (l (map count (get-notes melody)) length 0 (+ 1 (- (count melody) length)) {}))
 
 
-(fit-repeating-pattern (list HOLD HOLD 1 HOLD HOLD 1 HOLD HOLD HOLD 1 HOLD 1 HOLD 1 HOLD HOLD 1 HOLD HOLD HOLD 1 HOLD 1 HOLD 1 HOLD) 6)
-
+(defn fit-repeating-notes [melody length]
+  (defn l [s len i limit m ]
+    (if (>= i limit)
+      (- 0 (reduce + 0 (map second (filter (fn [x] (< 1 (second x))) m))))
+      (let [sub (take len s)
+            n (get m sub 0)]
+        (recur (rest s) len (+ 1 i) limit (assoc m sub (+ n 1))))))
+  (let [notes (map first (get-notes melody))]
+    (l notes length 0 (+ 1 (- (count notes) length)) {})))
 
 (defn difference [l]
   (if (empty? (rest l))
@@ -116,6 +123,10 @@
       0
       (/ (reduce + 0 (map abs (difference notes))) c))))
 
+(defn fit-largest-interval [melody cutoff]
+  (let [intervals (map abs (difference (map first (get-notes melody))))]
+     (count (filter (fn [x] (> x cutoff)) intervals))))
+
 (difference (list 2 4 6 8))
 (fit-melodic-intervals (list 0 2 4 6))
 (map abs (difference
@@ -137,18 +148,7 @@
        (Math/abs (normal-sum (difference h)) )) ))
 
 (defn count-occurences [notes]
-(reduce #(assoc %1 %2 (inc (%1 %2 0))) {} notes))
-
-(difference (list 1 HOLD 2 HOLD 3 HOLD 6 HOLD))
-
-(def x (map first (get-notes (list 1 HOLD 2 HOLD 3 HOLD 6 HOLD))))
-(def os (count-occurences (difference x)))
-
-(map (fn [x] (println x)) os)
-
-(def g 0)
-
-(os 1)
+  (reduce #(assoc %1 %2 (inc (%1 %2 0))) {} notes))
 
 ;; ******
 ;; Themes
@@ -218,8 +218,72 @@
          heaviest  (second (first (reverse (sort-by second m))))]
         (- heaviest (get m 0 2))))
 
+(defn fit-note-on-downbeats [melody]
+  (let [downbeats (map first (partition 8 melody))]
+    (count (filter (fn [x] (hold? x)) downbeats))))
 
-(fit-tonic-heaviest-last (list 0 HOLD 2 HOLD 4 5 6 HOLD))
+(defn relative-entropy [distro1 distro2]
+  (reduce + 0 (map (fn [x] (* (first x) (Math/log (/ (first x) (second x))))) (zip distro1 distro2))))
+
+(relative-entropy (list 0.1 0.2 0.7) (list 0.))
+
+(defn get-interval-frequencies [melody]
+  (let [notes (map first (get-notes melody))
+        c (count notes)
+        intervals (map abs (difference notes))
+        occurences (sort (count-occurences intervals))
+        interval-domain (map first occurences)
+        freqs (map (fn [x] [(first x) (two-decimals (double (/ (second x) c)))]) occurences)]
+    freqs))
+
+(defn get-length-frequencies [melody]
+  (let [lengths (map count (get-notes melody))
+        c (count lengths)
+        occurences (sort (count-occurences lengths))
+        length-domain (map first occurences)
+        freqs (map (fn [x] [(first x) (two-decimals (double (/ (second x) c)))]) occurences)]
+    freqs))
+
+
+(defn fit-interval-distribution [melody baseline]
+  (let [notes (map first (get-notes melody))
+        c (count notes)
+        intervals (map abs (difference notes))
+        occurences (sort (count-occurences intervals))
+        interval-domain (map first occurences)
+        freqs (map (fn [x] [(first x) (/ (second x) c)]) occurences)
+        ]
+    (if (not (= (map first baseline) interval-domain))
+      10
+      (relative-entropy (map second (sort baseline)) (map second (sort freqs))))
+  ))
+
+
+ (defn fit-length-distribution [melody baseline]
+  (let [lengths (map count (get-notes melody))
+        c (count lengths)
+        occurences (sort (count-occurences lengths))
+        length-domain (map first occurences)
+        freqs (map (fn [x] [(first x) (/ (second x) c)]) occurences)
+        ]
+    (if (not (= (map first baseline) length-domain))
+      10
+      (relative-entropy (map second (sort baseline)) (map second (sort freqs))))
+  ))
+
+
+ (get-length-frequencies (list 1 HOLD 2 HOLD HOLD 3 4 HOLD))
+
+  (count-occurences (map abs (difference (map first (get-notes (list 0 HOLD 1 HOLD HOLD 3 HOLD HOLD HOLD 6 HOLD HOLD HOLD HOLD))))))
+(fit-length-distribution (list 0 0 1 HOLD HOLD 3 HOLD HOLD HOLD 6 HOLD HOLD HOLD HOLD)
+                           [[0 1/4] [1 1/4] [2 1/4] [3 1/4]]
+                           )
+
+(= (list 1 3) (list 1 2))
+
+;(map first (partition 2 (list 1 2 1 2 1 2 1 2 1 2)))
+
+(sort (count-occurences (list 1 2 1 1 0 0 2 3 1)))
 
 ;; ******
 ;; Phrase
@@ -230,53 +294,31 @@
 ;; ***
 
 (defn fitness-theme [melody key-]
-  (+ (* 5 (fit-start-on-tonic         melody))
-     (* 5(fit-end-on-tonic         melody))
-;     (* 1/7 (fit-hill-shape           melody))))
-     (* 5 (fit-melodic-intervals    melody))
-     (* 3 (fit-slope-first-half       melody))
-     (* 1 (fit-tonic-heaviest-last       melody))
-     (* 1 (fit-tonic-heaviest-first       melody))
-     ;(* 1 (fit-repeating-pattern melody 5))
-     (* 3 (fit-slope-second-half      melody))
-     (* 1 (fit-on-beat-notes        melody))
-     ;(* 5 (fit-rest-ratio           melody))
-     (* 5 (fit-hold-ratio           melody))
-     (* 1 (fit-perfect-candence-end melody))))
-     ;(* 1/7 (fit-half-candence-middle melody))))
-
-(defn fitness-development [melody key-]
-  (+ (* 5 (fit-start-on-tonic         melody))
-     (* 5(fit-end-on-tonic         melody))
-;     (* 1/7 (fit-hill-shape           melody))))
-     (* 5 (fit-melodic-intervals    melody))
-     (* 3 (fit-slope-first-half       melody))
-     (* 1 (fit-tonic-heaviest-last       melody))
-     (* 1 (fit-tonic-heaviest-first       melody))
-     ;(* 1 (fit-repeating-pattern melody 5))
-     (* 3 (fit-slope-second-half      melody))
-     (* 1 (fit-on-beat-notes        melody))
-     ;(* 5 (fit-rest-ratio           melody))
-     (* 5 (fit-hold-ratio           melody))
-     (* 1 (fit-perfect-candence-end melody))))
-     ;(* 1/7 (fit-half-candence-middle melody))))
-
-;(defn fitness-development [melody key-]
-;  (+ ;(* 5 (fit-start-on-tonic         melody))
-     ;(* 5(fit-end-on-tonic         melody))
-;     (* 1/7 (fit-hill-shape           melody))))
-;     (* 5 (fit-melodic-intervals    melody))
-;     (* 3 (fit-slope-first-half       melody))
+  (+ (* 50 (fit-start-on-tonic         melody))
+     (* 50 (fit-end-on-tonic         melody))
+     (* 200 (fit-note-on-downbeats     melody))
+     (* 100 (fit-hill-shape           melody))
+     ;(* 5 (fit-melodic-intervals    melody))
+    ; (* 100 (fit-slope-first-half       melody))
+     ;(* 3 (fit-largest-interval melody 6))
      ;(* 1 (fit-tonic-heaviest-last       melody))
      ;(* 1 (fit-tonic-heaviest-first       melody))
-     ;(* 1 (fit-repeating-pattern melody 5))
-;     (* 3 (fit-slope-second-half      melody))
-;     (* 1 (fit-on-beat-notes        melody))
-;     (* 5 (fit-rest-ratio           melody))
-;     (* 1 (fit-perfect-candence-end melody))))
-     ;(* 1/7 (fit-half-candence-middle melody)))
+     ;(* 1 (fit-tonic-heaviest-first       melody))
+     (* 5 (fit-repeating-rhythm melody 6))
+     (* 5 (fit-repeating-notes melody  5))
+   ;  (* 100 (fit-slope-second-half      melody))
+     (* 800 (fit-interval-distribution melody [[0 0.05] [1 0.48] [2 0.28] [3 0.05] [4 0.06] [5 0.08]]))
+     (* 800 (fit-length-distribution melody   [[1 0.6] [2 0.20] [3 0.1] [4 0.1]]))
+     (* 20 (fit-on-beat-notes        melody))))
+     ;(* 5 (fit-rest-ratio           melody))
+     ;(* 200 (fit-hold-ratio           melody))))
+     ;(* 1 (fit-perfect-candence-end melody))))
+     ;(* 1/7 (fit-half-candence-middle melody))))
 
-     (defn print-fitness-info [melody]
+(defn two-decimals [n]
+     (/ (Math/floor (* 100 n)) 100))
+
+(defn print-fitness-info [melody]
     (println (melody->str melody))
     (print "  Start on tonic : ")
     (println (fit-start-on-tonic melody))
@@ -293,12 +335,12 @@
     (print "  Melodic interval : ")
     (println (fit-melodic-intervals melody))
     (print "  Fit repeating patter : ")
-    (println (fit-repeating-pattern melody 5)))
+    (println (fit-repeating-notes melody 5)))
 
 (defn fitness [type- key-]
   (fn [melody]
    ; (println (get-notes melody))
     (cond
       (= type- 'theme)       (fitness-theme melody key-)
-      (= type- 'development) (fitness-development melody key-))))
+      (= type- 'development) (fitness-theme melody key-))))
 

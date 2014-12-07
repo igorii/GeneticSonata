@@ -1,7 +1,7 @@
 (ns evol.utils)
 
 (def CHORDS (list 0 3 5 4))
-(def PHRASELEN (* 8 2))
+(def PHRASELEN (* 8 8))
 (def NOTEVAL 1/2)
 (def MAXNOTE 8)
 (def MINNOTE -8)

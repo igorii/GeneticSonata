@@ -19,8 +19,6 @@
 
 (perfect-cadence (list 1 2 3 4 5 6 7 8) 8)
 
-
-
 (defn split-three [i strlen]
   (let [points (two-points (+ 1 strlen))]
     (split-three-at i (first points) (second points))))
@@ -30,6 +28,9 @@
     (concat (first substrings)
             (op (second substrings))
             (first (rest (rest substrings))))))
+
+(defn insert-rests [i strlen]
+  (map (fn [x] (if (chance 0.2) HOLD x)) i))
 
 (defn sort-ascending [i strlen]
   (modify-substring i strlen
@@ -52,7 +53,7 @@
          (get-notes i))))
 
 (defn invert-rhythm [i strlen]
-  (map (fn [x] (if (chance 0.8)
+  (map (fn [x] (if (chance 0.2)
                  x
                  (if (hold? x)
                    (from-domain NOTERANGE)
@@ -72,5 +73,5 @@
       (get-notes i))))
 
 (defn random []
-  (nth [invert-rhythm wiggle-up wiggle-down sort-ascending sort-descending inversion]
-       (rand-int 6)))
+  (nth [insert-rests invert-rhythm wiggle-up wiggle-down sort-ascending sort-descending inversion]
+       (rand-int 7)))
