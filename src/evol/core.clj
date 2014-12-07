@@ -134,9 +134,10 @@ chords
 (defn play-sonata [key1- key2- mode- bpm- chords1 theme1 chords2 theme2 development tr1 tr2]
   (println (melody->str (concat theme1 theme2 development tr1 tr2)))
   (let* [m1  (->> (i->phrase theme1) (where :pitch (comp key1- mode-)) (where :part (is :default)))
-        m1' (->> (i->phrase theme1) (where :pitch (comp key2- minor)) (where :part (is :default)))
-        m2  (->> (i->phrase theme2) (where :pitch (comp key1- mode-)) (where :part (is :default)))
-        m2' (->> (i->phrase theme2) (where :pitch (comp key2- minor)) (where :part (is :default)))
+        m1'  (->> (i->phrase theme1) (where :pitch (comp key2- minor)) (where :part (is :default)))
+        m2   (->> (i->phrase theme2) (where :pitch (comp key1- mode-)) (where :part (is :default)))
+        m2'  (->> (i->phrase theme2) (where :pitch (comp key2- minor)) (where :part (is :default)))
+        dev' (->> (i->phrase development) (where :pitch (comp key2- minor)) (where :part (is :default)))
         nchords1  (make-chords chords1 key1- mode-)
         nchords1' (make-chords chords1 key2- minor)
         nchords2  (make-chords chords2 key1- mode-)
@@ -159,9 +160,10 @@ chords
     (->>
       m1
       (then (with m1   nchords1))
-      (then (with m2'  nchords1'))
+      (then (with m2'  nchords2'))
       (then (with m1'  nchords1'))
-      (then (with m2'  nchords1'))
+      (then (with m2'  nchords2'))
+      (then dev')
       (then (with m1   nchords1))
       (then (with m2   nchords2))
       ;(then m1); b1)); b2 b3 ))
@@ -289,27 +291,27 @@ chords
          chord2-pop  (init-population 100 0.6 0 PHRASELEN CHORDRANGE)
          theme1 (l 50 theme1-pop chord1-pop PHRASELEN)
          theme2 (l 50 theme2-pop chord2-pop PHRASELEN)
-       ];  theme2 (l 50 (init-population 100 0.4 0 PHRASELEN NOTERANGE) PHRASELEN)
-       ;  init-measure-pop (concat (list (first-bar theme1))
-       ;                           (list (last-bar  theme1))
-       ;                           (list (first-bar theme2))
-       ;                           (list (last-bar  theme2))
-       ;                           (init-population 30 0.4 0 8 NOTERANGE))
-       ;  dev-measure-pop (refine-measure-pop init-measure-pop 34)
-       ;  development     (development-from-pop dev-measure-pop 8)]
-        ;(println)
-        ;(println)
+       ;  theme2 (l 50 (init-population 100 0.4 0 PHRASELEN NOTERANGE) PHRASELEN)
+         init-measure-pop (concat (list (first-bar (first theme1)))
+                                  (list (last-bar  (first theme1)))
+                                  (list (first-bar (first theme2)))
+                                  (list (last-bar  (first theme2)))
+                                  (init-population 30 0.4 0 8 NOTERANGE))
+         dev-measure-pop (refine-measure-pop init-measure-pop 34)
+         development     (development-from-pop dev-measure-pop 8)
+        ];(println)
+        (println development)
         ;(print (fitness/get-interval-frequencies theme1)) (println)
         ;(print (fitness/get-length-frequencies theme1))   (println)
         (println theme1) (println theme2)
-        (dosync (ref-set last-song [theme1 theme2]))
-        (playy [theme1 theme2])))
+        (dosync (ref-set last-song [theme1 theme2 development]))
+        (playy [theme1 theme2 development])))
        ; (fitness/print-fitness-info theme1)
        ; (recur)))
     ;(play-sonata C G major 100 nil theme1 nil nil nil nil)))
                 ; (flatten (map (fn [x] (cons x (repeat 3 HOLD))) CHORDS))
                 ; theme1 theme2 (flatten development) nil nil)))
-
+(stop)
 #_(->>
   (with (->> (phrase (repeat 2) [0 1 2 3 4 5 6 7]) (where :part (is :default)))
         (->> (phrase (repeat 2) [0 1 2 3 4 5 6 7]) (where :part (is :bass))))
@@ -343,8 +345,14 @@ chords
 (fitness/get-interval-frequencies t)
 
 (def mozartssadness
- [[0 -9 3 -9 -9 4 5 -9 7 -9 -9 6 4 -9 -9 -9 0 -4 0 1 6 6 -9 7 7 6 6 -9 -9 2 -3 0] [0 -9 -9 -9 3 -9 -9 -9 6 -9 -9 1 3 -9 -9 -9 4 -9 2 -9 1 -9 -9 -9 3 -9 -9 -9 2 3 4 0]]
+ [[[0 -9 3 -9 -9 4 5 -9 7 -9 -9 6 4 -9 -9 -9 0 -4 0 1 6 6 -9 7 7 6 6 -9 -9 2 -3 0] [0 -9 -9 -9 3 -9 -9 -9 6 -9 -9 1 3 -9 -9 -9 4 -9 2 -9 1 -9 -9 -9 3 -9 -9 -9 2 3 4 0]]
+  [[0 -9 3 -9 -9 4 5 -9 7 -9 -9 6 4 -9 -9 -9 0 -4 0 1 6 6 -9 7 7 6 6 -9 -9 2 -3 0] [0 -9 -9 -9 3 -9 -9 -9 6 -9 -9 1 3 -9 -9 -9 4 -9 2 -9 1 -9 -9 -9 3 -9 -9 -9 2 3 4 0]]
+  ]
   )
+
+(def song2
+  [[[-1 -9 4 -9 -9 3 4 -9 8 6 8 -9 -9 -9 5 3 3 4 5 5 -9 2 1 6 7 6 5 3 5 -9 1 0] [1 5 0 -9 1 -9 -9 -9 -3 -9 -9 -9 2 -9 -9 -9 -1 -9 3 -9 -9 -9 2 -9 1 -9 -9 3 -9 -9 -9 1]] [[3 8 -9 -9 7 4 8 7 8 -9 7 -9 -9 -9 8 8 6 -9 7 -9 8 -9 8 -9 6 -9 5 -9 3 5 2 0] [1 -9 -9 -9 2 -9 -9 -9 0 -9 -9 -9 4 -9 -9 2 1 -9 -9 -9 2 -9 0 -9 5 -9 -9 -9 3 -9 -9 0]]]
+)
 
 ((fitness/fitness 'theme C) (first mozartssadness))
 
@@ -358,22 +366,33 @@ chords
   [[0 -9 1 -9 6 7 3 2 3 0 2 -9 1 3 -9 1 0 -4 -5 -7 -9 -9 -7 -4 -1 0 0 -9 -9 -9 2 0] [0 -9 5 -9 -9 -9 4 -9 5 8 -9 -9 -9 4 -9 -9 5 -9 -9 -9 7 -9 -9 -9 5 -9 4 -9 -9 -9 0 0]]
   )
 
+(println (deref last-song))
+
+(defn inst-chords [theme chords]
+  (reduce (fn [acc x]
+            (if (hold? (second x))
+              (concat acc (list (second x)))
+              (concat acc (list (first x)))))
+          () (zip theme chords)))
 
 ;[key1- key2- mode- bpm- chords theme1 theme2 development tr1 tr2]
  (playy (deref last-song))
 
 (defn playy [s]
-  (let [s1 (first (first s))
-        s2 (first (second s))]
-    (play-sonata E E major 100
-             (let [chord-notes (map first (partition 4 s1))]
-      (flatten (interleave chord-notes (repeat (count chord-notes) (list (list HOLD HOLD HOLD))))))
-             s1
-          (let [chord-notes (map first (partition 4 s2))]
-      (flatten (interleave chord-notes (repeat (count chord-notes) (list (list HOLD HOLD HOLD))))))
-             s2 nil nil nil)))
+  (let [s1 (first s)
+        s2 (second s)
+        dev (second (rest s))]
+    (play-sonata C G major 100
+      ;       (let [chord-notes (map first (partition 4 s1))]
+      ;(flatten (interleave chord-notes (repeat (count chord-notes) (list (list HOLD HOLD HOLD))))))
+       (inst-chords (first s1) (second s1))
+                 (first s1)
+       ;   (let [chord-notes (map first (partition 4 s2))]
+      ;(flatten (interleave chord-notes (repeat (count chord-notes) (list (list HOLD HOLD HOLD))))))
+             (inst-chords (first s2) (second s2))
+                 (first s2) dev nil nil)))
 
-(playy s)
+(playy song2)
 (first s)
 
 (stop)

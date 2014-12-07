@@ -311,7 +311,7 @@
    ;  (* 100 (fit-slope-second-half      melody))
      (* 800 (fit-interval-distribution melody [[0 0.05] [1 0.48] [2 0.28] [3 0.05] [4 0.06] [5 0.08]]))
      (* 800 (fit-length-distribution melody   [[1 0.6] [2 0.20] [3 0.1] [4 0.1]]))
-     (* 20 (fit-on-beat-notes        melody))))
+     (* 100 (fit-on-beat-notes        melody))))
      ;(* 5 (fit-rest-ratio           melody))
      ;(* 200 (fit-hold-ratio           melody))))
      ;(* 1 (fit-perfect-candence-end melody))))
