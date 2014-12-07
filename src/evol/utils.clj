@@ -1,11 +1,13 @@
 (ns evol.utils)
 
 (def CHORDS (list 0 3 5 4))
-(def PHRASELEN (* 8 8))
+(def PHRASELEN (* 8 4))
 (def NOTEVAL 1/2)
 (def MAXNOTE 8)
 (def MINNOTE -8)
-(def NOTERANGE (into [] (range MINNOTE MAXNOTE)))
+(def NOTERANGE  (into [] (range MINNOTE MAXNOTE)))
+(def CHORDRANGE (into [] (range 0 MAXNOTE)))
+
 
 (def HOLD (- MINNOTE 1))
 (defn hold? [x] (= x HOLD))
