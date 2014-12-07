@@ -281,16 +281,16 @@ chords
         [(into [] (second best-theme))
          (into [] (second best-chord))]
         (recur (- iter 1)
-               (cons (second best-theme) (create-next-gen fpop-themes 100 4 strlen 0.3))
-               (cons (second best-chord) (create-next-gen fpop-chords 100 4 strlen 0.3))
+               (cons (second best-theme) (create-next-gen fpop-themes 500 4 strlen 0.3))
+               (cons (second best-chord) (create-next-gen fpop-chords 500 4 strlen 0.3))
                strlen))))
 
-  (let* [theme1-pop  (init-population 100 0.4 0 PHRASELEN NOTERANGE)
-         chord1-pop  (init-population 100 0.6 0 PHRASELEN CHORDRANGE)
-         theme2-pop  (init-population 100 0.4 0 PHRASELEN NOTERANGE)
-         chord2-pop  (init-population 100 0.6 0 PHRASELEN CHORDRANGE)
-         theme1 (l 50 theme1-pop chord1-pop PHRASELEN)
-         theme2 (l 50 theme2-pop chord2-pop PHRASELEN)
+  (let* [theme1-pop  (init-population 500 0.4 0 PHRASELEN NOTERANGE)
+         chord1-pop  (init-population 500 0.6 0 PHRASELEN CHORDRANGE)
+         theme2-pop  (init-population 500 0.4 0 PHRASELEN NOTERANGE)
+         chord2-pop  (init-population 500 0.6 0 PHRASELEN CHORDRANGE)
+         theme1 (l 1000 theme1-pop chord1-pop PHRASELEN)
+         theme2 (l 1000 theme2-pop chord2-pop PHRASELEN)
        ;  theme2 (l 50 (init-population 100 0.4 0 PHRASELEN NOTERANGE) PHRASELEN)
          init-measure-pop (concat (list (first-bar (first theme1)))
                                   (list (last-bar  (first theme1)))
@@ -304,8 +304,13 @@ chords
         ;(print (fitness/get-interval-frequencies theme1)) (println)
         ;(print (fitness/get-length-frequencies theme1))   (println)
         (println theme1) (println theme2)
-        (dosync (ref-set last-song [theme1 theme2 development]))
-        (playy [theme1 theme2 development])))
+        (dosync (ref-set last-song [theme1 theme2 (flatten development)]))
+
+        (spit "event.log"
+              (str "\n\n"
+                   (str [theme1 theme2 (flatten development)])) :append true)
+        (recur)))
+        ;     (playy [theme1 theme2 (flatten development)])))
        ; (fitness/print-fitness-info theme1)
        ; (recur)))
     ;(play-sonata C G major 100 nil theme1 nil nil nil nil)))
@@ -327,8 +332,9 @@ chords
 
 (-main)
 
-(deref last-song)
-(playy (first (deref last-song)))
+(str (str (deref last-song)))
+;(playy
+ (deref last-song);)
 (stop)
 
 (require '[leipzig.chord :as chord])
@@ -354,9 +360,18 @@ chords
   [[[-1 -9 4 -9 -9 3 4 -9 8 6 8 -9 -9 -9 5 3 3 4 5 5 -9 2 1 6 7 6 5 3 5 -9 1 0] [1 5 0 -9 1 -9 -9 -9 -3 -9 -9 -9 2 -9 -9 -9 -1 -9 3 -9 -9 -9 2 -9 1 -9 -9 3 -9 -9 -9 1]] [[3 8 -9 -9 7 4 8 7 8 -9 7 -9 -9 -9 8 8 6 -9 7 -9 8 -9 8 -9 6 -9 5 -9 3 5 2 0] [1 -9 -9 -9 2 -9 -9 -9 0 -9 -9 -9 4 -9 -9 2 1 -9 -9 -9 2 -9 0 -9 5 -9 -9 -9 3 -9 -9 0]]]
 )
 
+(def song3
+  [[[0 -9 5 -9 3 4 -9 -9 3 -9 -9 -9 5 4 5 -9 3 4 4 3 5 -9 4 5 3 2 3 0 4 -9 5 0] [0 -9 -9 -9 1 -9 -9 -9 3 -9 -9 -9 4 -9 -9 -9 3 -9 6 -9 -9 -9 1 -9 3 -9 -9 -9 4 -9 -9 0]] [[0 4 3 -9 2 4 5 -9 3 2 4 -9 5 -9 -9 0 3 -9 -9 -9 2 -9 4 6 6 -9 4 3 2 -9 1 0] [0 -9 1 -9 -2 -9 -9 -9 3 -9 -9 -9 5 -9 -9 -9 4 -9 -9 -9 3 -9 -9 -9 5 -9 -9 -9 4 -9 -9 0]] (list 3 -9 5 -9 3 -9 2 -4 0 -9 2 -1 -9 8 -9 3 7 -9 8 -9 6 -9 8 0 -1 -9 6 -9 6 -9 3 -4 3 -9 -9 -9 3 7 8 -9 -1 8 -9 6 6 -7 6 2 0 -9 2 -1 -9 8 -9 3 8 -9 7 3 1 1 0 8)]
+)
+
+(def song4
+  [[[0 -9 3 5 4 5 1 0 5 4 8 -9 3 -9 -9 2 6 -9 -9 -9 4 4 0 -1 4 -9 4 -9 0 -9 -2 0] [0 -9 -9 -9 1 -9 -9 -9 2 -9 -9 -9 6 -9 -9 -9 8 -9 3 -9 2 -9 -9 -9 1 -9 -9 -9 3 -9 -9 0]] [[0 5 4 -9 2 0 2 -9 3 4 3 2 3 -9 4 3 2 3 8 -9 4 2 -9 -9 1 -9 -9 -9 3 -9 0 0] [0 -9 -9 -9 -1 -9 -9 -9 4 -9 -9 -9 8 -9 -9 -9 6 -9 -9 -9 5 -9 3 -9 4 -9 -9 -9 3 -9 -9 0]] (list 5 -1 1 -1 -3 -1 0 -9 -4 -4 -2 -1 -9 -9 -3 -2 7 8 8 8 -9 -9 8 8 7 -9 8 -9 -9 -9 2 7 -7 -7 -7 -6 0 -3 -9 -1 0 -3 -9 -1 -7 -7 -6 -9 3 1 -4 -3 -3 -9 0 1 0 -1 -9 -9 -6 -9 -7 -9)]
+)
 ((fitness/fitness 'theme C) (first mozartssadness))
 
 (fitness/print-fitness-info (first mozartssadness))
+
+(playy song4)
 
 (def s1
   [[0 5 6 -9 8 5 3 -9 1 2 -9 3 -9 -9 4 -9 2 1 0 4 5 -9 -9 -9 4 -9 3 4 -9 -9 2 0] [0 4 5 -9 -9 -9 8 -9 3 -9 -9 -9 2 -9 -9 -9 4 -9 -9 -9 2 -9 -9 -9 1 -9 -9 -9 2 -9 -9 0]]
@@ -382,15 +397,12 @@ chords
   (let [s1 (first s)
         s2 (second s)
         dev (second (rest s))]
-    (play-sonata C G major 100
-      ;       (let [chord-notes (map first (partition 4 s1))]
-      ;(flatten (interleave chord-notes (repeat (count chord-notes) (list (list HOLD HOLD HOLD))))))
+    (play-sonata C G major 80
        (inst-chords (first s1) (second s1))
                  (first s1)
-       ;   (let [chord-notes (map first (partition 4 s2))]
-      ;(flatten (interleave chord-notes (repeat (count chord-notes) (list (list HOLD HOLD HOLD))))))
              (inst-chords (first s2) (second s2))
-                 (first s2) dev nil nil)))
+                 (first s2)
+                 dev nil nil)))
 
 (playy song2)
 (first s)
