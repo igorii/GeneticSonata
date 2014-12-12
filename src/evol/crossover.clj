@@ -1,6 +1,6 @@
 (ns evol.crossover)
 
-
+;; Perform one-point crossover on two parents
 (defn one-point [parent1 parent2 cross-point]
 
   (defn get-child [op cross-point p1 p2]
