@@ -3,7 +3,7 @@ Genetic Sonata-Allegro Composition
 
 ## Running
 
-There are three targets provided. These can be compiled with `lein uberjar`, or run separately using leiningen.
+There are three targets provided. These can be compiled with `lein uberjar`, or run separately using leiningen (obtained from [Leiningen](http://leiningen.org)).
 
 #### Genetic Algorithm
 
