@@ -13,11 +13,8 @@
         q (drop b i)]
     (list p q r)))
 
-;; TODO (on get-notes)
 (defn perfect-cadence [i strlen]
   (concat (take (- strlen 3) i) (list 4 5 0)))
-
-(perfect-cadence (list 1 2 3 4 5 6 7 8) 8)
 
 (defn split-three [i strlen]
   (let [points (two-points (+ 1 strlen))]

@@ -59,6 +59,7 @@
 
 ;; Play a single note as a sampled piano
 (defmethod play-note :default [{midi :pitch seconds :duration}]
+ ;(set :gate sampled-piano 0)
   (when midi (-> midi sampled-piano)))
 
 ;; Instantiate a chord structure on under a theme given a chord rhythm

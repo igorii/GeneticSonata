@@ -62,44 +62,6 @@
 (def last-song (ref nil))
 
 ;; Main entry point
-;;(defn -main []
-;;  (defn l [iter oldthemepop oldchordpop strlen]
-;;    (let* [fits-themes (map (fitness/fitness 'theme) oldthemepop)
-;;           fpop-themes (map list fits-themes oldthemepop)
-;;           fits-chords (map (fitness/fitness 'chord) oldchordpop)
-;;           fpop-chords (map list fits-chords oldchordpop)
-;;           best-theme  (min1 fpop-themes)
-;;           best-chord  (min1 fpop-chords)
-;;           ]
-;;      (print iter) (print " ") (println [(first best-theme) (first best-chord)])
-;;      (if (= 0 iter)
-;;        [ (into [] (second best-theme)) (into [] (second best-chord)) ]
-;;        (recur (- iter 1)
-;;               (cons (second best-theme) (create-next-gen fpop-themes 100 4 strlen 0.3))
-;;               (cons (second best-chord) (create-next-gen fpop-chords 100 4 strlen 0.3))
-;;               strlen))))
-;;
-;;  (let* [theme1-pop  (init-population 100 0.4 0 PHRASELEN NOTERANGE)
-;;         chord1-pop  (init-population 100 0.6 0 PHRASELEN CHORDRANGE)
-;;         theme2-pop  (init-population 100 0.4 0 PHRASELEN NOTERANGE)
-;;         chord2-pop  (init-population 100 0.6 0 PHRASELEN CHORDRANGE)
-;;         theme1 (l 50 theme1-pop chord1-pop PHRASELEN)
-;;         theme2 (l 50 theme2-pop chord2-pop PHRASELEN)
-;;         init-measure-pop (concat (list (first-bar (first theme1)))
-;;                                  (list (last-bar  (first theme1)))
-;;                                  (list (first-bar (first theme2)))
-;;                                  (list (last-bar  (first theme2)))
-;;                                  (init-population 30 0.4 0 8 NOTERANGE))
-;;         dev-measure-pop (refine-measure-pop init-measure-pop 34)
-;;         development     (development-from-pop dev-measure-pop 8)
-;;         ]
-;;    (println development)
-;;    (println theme1) (println theme2)
-;;    (dosync (ref-set last-song [theme1 theme2 (flatten development)]))
-;;    (spit "event.log"
-;;          (str "\n\n"
-;;               (str [theme1 theme2 (flatten development)])) :append true)
-;;    (play/play-song (deref last-song))))
 (defn -main []
   (defn l [typ iter oldpop strlen popsize tourny-size mutation-rate fitness-data]
     (let* [fits (map (fitness/fitness typ fitness-data) oldpop)
@@ -117,8 +79,8 @@
                mutation-rate
                fitness-data))))
 
-  (let* [popsize       1000
-         iters         500
+  (let* [popsize       100
+         iters         200
          hold-rate     0.4
          rest-rate     0
          tourny-size   4
@@ -143,13 +105,13 @@
     (println theme1)
     (println theme2)
     (dosync (ref-set last-song [[theme1 chords] [theme2 chords] [(flatten development) (flatten (repeat 2 chords))]]))
-    (spit "event2.log"
-          (str "\n\n"
+    (spit "event3.log"
+          (str "\r\n\r\n"
                (str (deref last-song))) :append true)
     (recur)))
    ; (play/play-song (deref last-song))))
 
-   (play/play-song (deref last-song))
+(play/play-song (deref last-song))
 
 (-main)
 (stop)

@@ -104,15 +104,6 @@
                    occurences)]
     freqs))
 
-(defn num-same-sublists [l1 l2]
-  (def compt (lists-of-size-4 l2))
-  (defn num-same-sublists-single [l1']
-    (count (filter true? (flatten (map (fn [x] (= l1' x)) compt)))))
-  (reduce + 0 (map second (reduce (fn [acc x]
-            (let [prev (get acc x 0)]
-              (assoc acc x (max prev (num-same-sublists-single x)))))
-          {}
-          (lists-of-size-4 l1)))))
 
 (defn lists-of-size-4 [l]
   (partition 4 (flatten
@@ -122,11 +113,16 @@
                      (rest (rest l)))
                    (rest (rest (rest l)))))))
 
-(defn num-repeating-patterns-3 [a b]
-  (reduce + 0 (map (fn [y] (count (filter true? (map
-                                                 (fn [x] (= x y))
-                                                 (lists-of-size-3 a)))))
-                   (lists-of-size-3 b))))
+
+(defn num-same-sublists [l1 l2]
+  (def compt (lists-of-size-4 l2))
+  (defn num-same-sublists-single [l1']
+    (count (filter true? (flatten (map (fn [x] (= l1' x)) compt)))))
+  (reduce + 0 (map second (reduce (fn [acc x]
+            (let [prev (get acc x 0)]
+              (assoc acc x (max prev (num-same-sublists-single x)))))
+          {}
+          (lists-of-size-4 l1)))))
 
 ;; ***********
 ;;   FITNESS
@@ -327,15 +323,11 @@
 
 ;; Return the fitness for a chord rhythm
 (defn fitness-chord [melody]
-  (+ (* 50 (fit-start-on-tonic         melody))
-     (* 50 (fit-end-on-tonic           melody))
-     (* 200 (fit-note-on-downbeats     melody))
-     ;(* 100 (fit-hill-shape           melody))
+  (+ (* 50 (fit-start-on-tonic       melody))
+     (* 50 (fit-end-on-tonic         melody))
+     (* 200 (fit-note-on-downbeats   melody))
      (* 10 (fit-repeating-rhythm melody 5))
      (* 5 (fit-repeating-rhythm melody  3))
-     ;(* 10 (fit-repeating-notes melody  5))
-     ;(* 5 (fit-repeating-notes melody   3))
-     ;(* 800 (fit-interval-distribution melody [[0 0.05] [1 0.48] [2 0.28] [3 0.05] [4 0.06] [5 0.08]]))
      (* 800 (fit-length-distribution melody   [[1 0.05] [2 0.05] [3 0.05] [4 0.85]]))
      (* 20 (fit-on-beat-notes        melody))))
 
