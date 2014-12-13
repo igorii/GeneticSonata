@@ -1,12 +1,10 @@
 (ns evol.midi
+  (:gen-class)
   (:use music-compojure
         music-compojure.notes
         music-compojure.generators))
 
-(require '[evol.play :refer [inst-chords]])
 (require '[evol.utils :refer :all])
-
-(inst-chords (list 1 2 3 4) (list 1 HOLD 2 HOLD))
 
 ;; Write a list of holds and notes as a midi file to the given file location
 (defn melody->midi [melody chords file]
@@ -25,15 +23,7 @@
                      both)]
         (vec midi)))
 
-    ;(create-midi-file (vec (map (fn [x] (make-chord (first x) (second x))) (line->vec (inst-chords melody chords)))) file))
-
- ; (create-midi-file (map (fn [x] (make-chord (first x) (second x))) (line->vec melody)) file))
-  (create-midi-file [{:spacing-inverted true}
-                     (_ [{:channel 1 :program 1} (line->vec melody)]
-                        [{:channel 2 :program 2} (vec (map (fn [x] (make-chord (- (first x) 12) (second x))) (line->vec (inst-chords melody chords))))] _) 0]
-                    file))
-
-(map (fn [x] (+ x 1)) (vec (list 1 2)))
+    (create-midi-file (line->vec melody) file))
 
 ;; Convert a song structure of the form,
 ;;     [ [theme1 chords1] [theme2 chords2] [devel chords] ]
@@ -57,3 +47,10 @@
                       (first  c)
                       (second c)))
      file)))
+
+(defn -main [& args] 
+  (let* [infile (first args)
+         outfile (second args)
+         contents (read-string (slurp infile))]
+    (song->midi contents outfile)))
+

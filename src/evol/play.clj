@@ -1,4 +1,5 @@
 (ns evol.play
+  (:gen-class)
   (:use leipzig.scale, leipzig.melody, leipzig.live, leipzig.chord
         overtone.inst.sampled-piano
         overtone.inst.synth))
@@ -62,19 +63,11 @@
  ;(set :gate sampled-piano 0)
   (when midi (-> midi sampled-piano)))
 
-;; Instantiate a chord structure on under a theme given a chord rhythm
-(defn inst-chords [theme chords]
-  (reduce (fn [acc x]
-            (if (hold? (second x))
-              (concat acc (list (second x)))
-              (concat acc (list (first x)))))
-          () (zip theme chords)))
-
 ;; ***********
 ;;    PLAY
 ;; ***********
 
-(defn play-song [s]
+(defn play-song [s settings]
 
   ;; Play a list of notes (currently each note is interpreted as an eigth note)
   (defn play-one [key- mode bpm- melody]
@@ -140,10 +133,13 @@
         (where :time (bpm bpm-))
         play)))
 
-  (let [s1 (first s)
-        s2 (second s)
+  (let [s1  (first s)
+        s2  (second s)
         dev (second (rest s))]
-    (play-sonata E E major 80
+    (play-sonata (get settings :key1) 
+                 (get settings :key2) 
+                 (get settings :mode) 
+                 (get settings :bpm)
                  (inst-chords (first s1) (second s1))
                  (first s1)
                  (inst-chords (first s2) (second s2))
@@ -151,4 +147,22 @@
                  (inst-chords (first dev) (second dev))
                  (first dev)
                  nil nil)))
+
+(defn resolve-key [k]
+  (case k "A" A "B" B "C" C "D" D "E" E "F" F "G" G))
+
+(defn resolve-mode [m]
+  (case m "major" major "minor" minor))
+
+(defn -main [& args]
+  (let* [infile (first args)
+         song (read-string (slurp infile))
+         key1 (second args)
+         key2 (second (rest args))
+         mode (second (rest (rest args)))
+         bpm  (second (rest (rest (rest args))))]
+    (play-song song {:key1 (resolve-key key1) 
+                     :key2 (resolve-key key2) 
+                     :mode (resolve-mode mode) 
+                     :bpm (read-string bpm)})))
 

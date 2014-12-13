@@ -79,3 +79,11 @@
   (let [total (count (get-notes melody))]
     (map (fn [x] [(first x) (/ (second x) total)]) 
          (note-distribution melody))))
+
+;; Instantiate a chord structure on under a theme given a chord rhythm
+(defn inst-chords [theme chords]
+  (reduce (fn [acc x]
+            (if (hold? (second x))
+              (concat acc (list (second x)))
+              (concat acc (list (first x)))))
+          () (zip theme chords)))

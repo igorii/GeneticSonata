@@ -1,15 +1,7 @@
-(ns evol.core
-  (:use leipzig.scale, leipzig.melody, leipzig.live, leipzig.chord
-        overtone.inst.sampled-piano
-        overtone.inst.synth))
-
-(require '[overtone.live :as overtone]
-         '[leipzig.chord :as chord]
-         '[leipzig.melody :refer [bpm is phrase then times where with]])
+(ns evol.core (:gen-class))
 
 (require '[evol.fitness   :as fitness]
          '[evol.crossover :as crossover]
-         '[evol.play      :as play]
          '[evol.selection :as selection]
          '[evol.mutation  :as mutation]
          '[evol.utils :refer :all])
@@ -59,17 +51,34 @@
 (defn development-from-pop [population dev-length]
   (map (fn [x] (first (shuffle population))) (range 0 dev-length)))
 
-(def last-song (ref nil))
+;; Write a song to the given file
+(defn song->file [file theme1 theme2 development chords]
+    (spit file (str [[theme1 chords] 
+                        [theme2 chords] 
+                        [(into [] (flatten development)) 
+                         (into [] (flatten (repeat 2 chords)))]]) 
+          :append true))
 
 ;; Main entry point
-(defn -main []
+(defn -main [& args]
   (defn l [typ iter oldpop strlen popsize tourny-size mutation-rate fitness-data]
+
+    ;; Calculate fitness and find the best
     (let* [fits (map (fitness/fitness typ fitness-data) oldpop)
            fpop (map list fits oldpop)
            best (min1 fpop)]
-      (print iter) (print " ") (println [(first best)])
+
+      ;; Print progress info
+      (do (print iter) 
+          (print " ") 
+          (println best))
+
+      ;; If the last iteration, stop and return
       (if (= 0 iter)
-        (into [] (second best))
+        (do (println best)
+            (into [] (second best)))
+
+        ;; Loop until out of iterations
         (recur typ
                (- iter 1)
                (cons (second best) (create-next-gen fpop popsize tourny-size strlen mutation-rate))
@@ -79,39 +88,27 @@
                mutation-rate
                fitness-data))))
 
-  (let* [popsize       100
-         iters         200
+  ;; GA parameters
+  (let* [outfile       (first args)
+         popsize       500
+         iters         500
          hold-rate     0.4
          rest-rate     0
          tourny-size   4
          mutation-rate 0.3
-         theme1-pop  (init-population popsize hold-rate rest-rate PHRASELEN NOTERANGE)
-         chord1-pop  (init-population popsize hold-rate rest-rate PHRASELEN CHORDRANGE)
-         theme2-pop  (init-population popsize hold-rate rest-rate PHRASELEN NOTERANGE)
-         devel-pop   (init-population popsize hold-rate rest-rate (* 2 PHRASELEN) NOTERANGE)
-         theme1      (l 'theme iters theme1-pop PHRASELEN popsize tourny-size mutation-rate nil)
-         theme2      (l 'theme iters theme2-pop PHRASELEN popsize tourny-size mutation-rate nil)
-         chords      (l 'chord iters chord1-pop PHRASELEN popsize tourny-size mutation-rate nil)
-         development (l 'development (* 2 iters) devel-pop (* 2 PHRASELEN) popsize tourny-size mutation-rate [theme1 theme2])
-         ;init-measure-pop (concat (list (first-bar  theme1))
-         ;                         (list (last-bar   theme1))
-         ;                         (list (first-bar  theme2))
-         ;                         (list (last-bar   theme2))
-         ;                         (init-population 30 0.4 0 8 NOTERANGE))
-         ;dev-measure-pop (refine-measure-pop init-measure-pop 34)
-         ;development     (development-from-pop dev-measure-pop 8)
+         phraselen (* 8 4)
+
+         ;; Run the GA for each sonata component
+         theme1-pop  (init-population popsize hold-rate rest-rate phraselen NOTERANGE)
+         chord1-pop  (init-population popsize hold-rate rest-rate phraselen CHORDRANGE)
+         theme2-pop  (init-population popsize hold-rate rest-rate phraselen NOTERANGE)
+         devel-pop   (init-population popsize hold-rate rest-rate (* 2 phraselen) NOTERANGE)
+         theme1      (l 'theme iters theme1-pop phraselen popsize tourny-size mutation-rate nil)
+         theme2      (l 'theme iters theme2-pop phraselen popsize tourny-size mutation-rate nil)
+         chords      (l 'chord iters chord1-pop phraselen popsize tourny-size mutation-rate nil)
+         development (l 'development (* 2 iters) devel-pop (* 2 phraselen) popsize tourny-size mutation-rate [theme1 theme2])
          ]
-   ; (println development)
-    (println theme1)
-    (println theme2)
-    (dosync (ref-set last-song [[theme1 chords] [theme2 chords] [(flatten development) (flatten (repeat 2 chords))]]))
-    (spit "event3.log"
-          (str "\r\n\r\n"
-               (str (deref last-song))) :append true)
-    (recur)))
-   ; (play/play-song (deref last-song))))
 
-(play/play-song (deref last-song))
+    ;; Print the song components to the specified file
+    (song->file outfile theme1 theme2 development chords)))
 
-(-main)
-(stop)
