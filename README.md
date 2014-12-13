@@ -1,6 +1,8 @@
 Genetic Sonata-Allegro Composition
 ==================================
 
+![Composition Theme](images/theme.png)
+
 ## Running
 
 There are three targets provided. These can be compiled with `lein uberjar`, or run separately using leiningen (obtained from [Leiningen](http://leiningen.org)).
@@ -98,6 +100,12 @@ In order to avoid random rhythms, an individual is penalized for each rest at an
 #### Development-Only Fitness Criteria
 
 #### Chord Fitness Criteria
+
+## Result
+
+The end result is a full Sonata-Allegro composition consisting of two themes and a development. The following image is the output of one run.
+
+![Sonata-Allegro Composition](images/full)
 
 ## Playback
 
