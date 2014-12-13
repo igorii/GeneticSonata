@@ -61,6 +61,9 @@
 
 ;; Main entry point
 (defn -main [& args]
+  (defn elitism [best newpop]
+    (cons (second best) newpop))
+
   (defn l [typ iter oldpop strlen popsize tourny-size mutation-rate fitness-data]
 
     ;; Calculate fitness and find the best
@@ -81,12 +84,8 @@
         ;; Loop until out of iterations
         (recur typ
                (- iter 1)
-               (cons (second best) (create-next-gen fpop popsize tourny-size strlen mutation-rate))
-               strlen
-               popsize
-               tourny-size
-               mutation-rate
-               fitness-data))))
+               (elitism best (create-next-gen fpop popsize tourny-size strlen mutation-rate))
+               strlen popsize tourny-size mutation-rate fitness-data))))
 
   ;; GA parameters
   (let* [outfile       (first args)

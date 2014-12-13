@@ -75,7 +75,7 @@ Following Sonata-Allegro form, a minimum of three populations are used. One popu
 
 ### Crossover
 
-Standard one-point crossover between two parents is used to generate two children. A random position in the encoding is chosen. Elements from the first parent before the chosen point and the elements from the second parent after the chosen point are used to construct one child. Similarity, the opposite elements are used to construct the second child.
+Standard one-point crossover between two parents is used to generate two children. A random position in the encoding is chosen. Elements from the first parent before the chosen point and the elements from the second parent after the chosen point are used to construct one child. Similarly, the opposite elements are used to construct the second child.
 
 ### Selection
 
@@ -87,7 +87,7 @@ Several mutation strategies are available, and are applied by default at a rate 
 
 First, as a means of introducing and removing `HOLD`s from an individual, `invert-rhythm` will loop over the entire individual and flip a note to a HOLD or a HOLD to a random note with a chance of 20% per element.
 
-To aid in the creation of intervallic movement two mutations appearing in GenJam are used. The first replaces a random substring from an individual with a ascending version. The second, similarity, replaces a substring with a descending version.
+To aid in the creation of intervallic movement two mutations appearing in GenJam are used. The first replaces a random substring from an individual with an ascending version. The second, similarity, replaces a substring with a descending version.
 
 Two similar choose a random substring from an individual in the same way as the sorting mutation. However, each element in the substring is either incremented a random amount, or decremented a random amount, depending on the mutation operation.
 
