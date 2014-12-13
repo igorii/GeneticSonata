@@ -303,32 +303,37 @@
 ;; API
 ;; ***
 
-;; Return the fitness for a theme
-(defn fitness-theme [melody]
+
+(defn fitness-phrase [melody settings]
   (+ (* 50 (fit-start-on-tonic         melody))
      (* 50 (fit-end-on-tonic           melody))
      (* 200 (fit-note-on-downbeats     melody))
-     (* 100 (fit-hill-shape            melody))
      (* 10 (fit-repeating-rhythm melody 5))
      (* 5 (fit-repeating-rhythm melody  3))
      (* 10 (fit-repeating-notes melody  5))
      (* 5 (fit-repeating-notes melody   3))
-     (* 800 (fit-interval-distribution melody [[0 0.05] [1 0.48] [2 0.28] [3 0.05] [4 0.06] [5 0.08]]))
-     (* 800 (fit-length-distribution   melody   [[1 0.6] [2 0.20] [3 0.1] [4 0.1]]))
+     (* 800 (fit-interval-distribution melody (get settings "interval-distribution")))
+     (* 800 (fit-length-distribution   melody (get settings "duration-distribution")))  
      (* 100 (fit-on-beat-notes         melody))))
 
-(defn fitness-development [melody theme1 theme2]
-  (+ (fitness-theme melody)
+;; Return the fitness for a theme
+(defn fitness-theme [melody settings]
+  (+ (fitness-phrase melody settings)
+     (* 100 (fit-hill-shape melody))))
+
+(defn fitness-development [melody theme1 theme2 settings]
+  (+ (fitness-theme melody settings)
+     (reduce + 0 (map (fn [x] (* 20 (fit-hill-shape x))) (partition 32 melody)))
      ((cooperative-fitness theme1 theme2) melody)))
 
 ;; Return the fitness for a chord rhythm
-(defn fitness-chord [melody]
+(defn fitness-chord [melody settings]
   (+ (* 50 (fit-start-on-tonic       melody))
      (* 50 (fit-end-on-tonic         melody))
      (* 200 (fit-note-on-downbeats   melody))
      (* 10 (fit-repeating-rhythm melody 5))
      (* 5 (fit-repeating-rhythm melody  3))
-     (* 800 (fit-length-distribution melody   [[1 0.05] [2 0.05] [3 0.05] [4 0.85]]))
+     (* 800 (fit-length-distribution melody   (get settings "chord-dur-distribution")))
      (* 20 (fit-on-beat-notes        melody))))
 
 ;; Print the fitness report for a melody
@@ -356,10 +361,10 @@
   (println (fit-length-distribution melody   [[1 0.6] [2 0.20] [3 0.1] [4 0.1]])))
 
 ;; Return the fitness for a given type of individual
-(defn fitness [type- themes]
+(defn fitness [type- themes settings]
   (fn [melody]
     (cond
-      (= type- 'theme)       (fitness-theme melody)
-      (= type- 'chord)       (fitness-chord melody)
-      (= type- 'development) (fitness-development melody (first themes) (second themes)))))
+      (= type- 'theme)       (fitness-theme melody settings)
+      (= type- 'chord)       (fitness-chord melody settings)
+      (= type- 'development) (fitness-development melody (first themes) (second themes) settings))))
 

@@ -1,5 +1,7 @@
 (ns evol.core (:gen-class))
 
+(require '[clojure.data.json :as json])
+
 (require '[evol.fitness   :as fitness]
          '[evol.crossover :as crossover]
          '[evol.selection :as selection]
@@ -59,15 +61,20 @@
                          (into [] (flatten (repeat 2 chords)))]]) 
           :append true))
 
+  (defn get-settings [filelist default]
+    (if (nil? (first filelist))
+      default
+      (json/read-str (slurp (first filelist)))))
+
 ;; Main entry point
 (defn -main [& args]
   (defn elitism [best newpop]
     (cons (second best) newpop))
 
-  (defn l [typ iter oldpop strlen popsize tourny-size mutation-rate fitness-data]
+  (defn l [typ iter fitness-settings oldpop strlen popsize tourny-size mutation-rate fitness-data]
 
     ;; Calculate fitness and find the best
-    (let* [fits (map (fitness/fitness typ fitness-data) oldpop)
+    (let* [fits (map (fitness/fitness typ fitness-data fitness-settings) oldpop)
            fpop (map list fits oldpop)
            best (min1 fpop)]
 
@@ -84,30 +91,46 @@
         ;; Loop until out of iterations
         (recur typ
                (- iter 1)
+               fitness-settings
                (elitism best (create-next-gen fpop popsize tourny-size strlen mutation-rate))
                strlen popsize tourny-size mutation-rate fitness-data))))
 
   ;; GA parameters
-  (let* [outfile       (first args)
-         popsize       500
-         iters         500
-         hold-rate     0.4
+  (let* [outfile (first args)
+         default-settings {
+                      "popsize" 500 
+                      "iters" 500 
+                      "hold-rate" 0.4 
+                      "tourny-size" 4 
+                      "mutation-rate" 0.3 
+                      "phraselen" 32 
+                      "fitness" {
+                                "hold-rate" 0.3 
+                                "duration-distribution"  [[1 0.6] [2 0.2] [3 0.1] [4 0.1]]
+                                "interval-distribution"  [[0 0.05] [1 0.48] [2 0.28] [3 0.05] [4 0.06] [5 0.08]]
+                                "chord-dur-distribution" [[1 0.05] [2 0.05] [3 0.05] [4 0.85]]}}
+
+         settings (get-settings (rest args) default-settings)
+         popsize       (get settings "popsize")
+         iters         (get settings "iters")
+         hold-rate     (get settings "hold-rate")
          rest-rate     0
-         tourny-size   4
-         mutation-rate 0.3
-         phraselen (* 8 4)
+         tourny-size   (get settings "tourny-size")
+         mutation-rate (get settings "mutation-rate")
+         phraselen     (get settings "phraselen")
 
          ;; Run the GA for each sonata component
          theme1-pop  (init-population popsize hold-rate rest-rate phraselen NOTERANGE)
          chord1-pop  (init-population popsize hold-rate rest-rate phraselen CHORDRANGE)
          theme2-pop  (init-population popsize hold-rate rest-rate phraselen NOTERANGE)
          devel-pop   (init-population popsize hold-rate rest-rate (* 2 phraselen) NOTERANGE)
-         theme1      (l 'theme iters theme1-pop phraselen popsize tourny-size mutation-rate nil)
-         theme2      (l 'theme iters theme2-pop phraselen popsize tourny-size mutation-rate nil)
-         chords      (l 'chord iters chord1-pop phraselen popsize tourny-size mutation-rate nil)
-         development (l 'development (* 2 iters) devel-pop (* 2 phraselen) popsize tourny-size mutation-rate [theme1 theme2])
+         theme1      (l 'theme iters (get settings "fitness") theme1-pop phraselen popsize tourny-size mutation-rate nil)
+         theme2      (l 'theme iters (get settings "fitness") theme2-pop phraselen popsize tourny-size mutation-rate nil)
+         chords      (l 'chord iters (get settings "fitness") chord1-pop phraselen popsize tourny-size mutation-rate nil)
+         development (l 'development (* 2 iters) (get settings "fitness") devel-pop (* 2 phraselen) popsize tourny-size mutation-rate [theme1 theme2])
          ]
 
     ;; Print the song components to the specified file
-    (song->file outfile theme1 theme2 development chords)))
+    (song->file outfile theme1 theme2 development chords)
+    (println (str "Song written to " outfile))))
 
