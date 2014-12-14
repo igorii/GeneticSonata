@@ -39,26 +39,24 @@
                 (line->vec (inst-chords melody chords))) ))
     file))
 
+;; Convert a song data structure to a sonata-allegro form line
+(defn sonata-allegro [song]
+  (flatten (concat (first  song) (second song)
+                   (first  song) (second song)
+                   (second (rest song)) 
+                   (first  song) (second song))))
+
 ;; Convert a song structure of the form,
 ;;     [ [theme1 chords1] [theme2 chords2] [devel chords] ]
 ;; to a midi file at the given location
 (defn song->midi [song file]
-  (let [m (map first song)
-        c (map second song)]
-    (melody->midi
-      (flatten (concat (first  m) (second m)
-                       (first  m) (second m)
-                       (second (rest m)) (first  m)
-                       (second m)))
-      (flatten (concat (first  c) (second c)
-                       (first  c) (second c)
-                       (second (rest c)) (first  c)
-                       (second c)))
-      file)))
+  (let [melody  (map first song)
+        chords (map second song)]
+    (melody->midi (sonata-allegro melody) (sonata-allegro chords) file)))
 
 (defn -main [& args] 
-  (let* [infile (first args)
-         outfile (second args)
+  (let* [infile   (first args)
+         outfile  (second args)
          contents (read-string (slurp infile))]
     (song->midi contents outfile)))
 
