@@ -123,3 +123,6 @@ The end result is a full Sonata-Allegro composition consisting of two themes and
 
 ![Sonata-Allegro Composition](images/full-with-chords.png)
 
+The following image is the output of only repeated themes without development.
+
+![Sonata-Allegro Composition Themes](images/themes.png)
