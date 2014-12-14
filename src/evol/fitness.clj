@@ -322,8 +322,8 @@
      (* 100 (fit-hill-shape melody))))
 
 (defn fitness-development [melody theme1 theme2 settings]
-  (+ (fitness-theme melody settings)
-     (reduce + 0 (map (fn [x] (* 20 (fit-hill-shape x))) (partition 32 melody)))
+  (+ (fitness-phrase melody settings)
+     (reduce + 0 (map (fn [x] (* 20 (fit-hill-shape x))) (partition 16 melody)))
      ((cooperative-fitness theme1 theme2) melody)))
 
 ;; Return the fitness for a chord rhythm

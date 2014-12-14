@@ -1,6 +1,6 @@
 {
     "hold-rate": 0.4,
-    "iters": 50,
+    "iters": 500,
     "phraselen": 32,
     "tourny-size": 4,
     "fitness": {
@@ -10,5 +10,5 @@
         "chord-dur-distribution": [[1,0.05],[2,0.05],[3,0.05],[4,0.85]]
     },
     "mutation-rate": 0.3,
-    "popsize": 50
+    "popsize": 100
 }

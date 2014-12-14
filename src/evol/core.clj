@@ -59,7 +59,7 @@
                         [theme2 chords] 
                         [(into [] (flatten development)) 
                          (into [] (flatten (repeat 2 chords)))]]) 
-          :append true))
+          :append false))
 
   (defn get-settings [filelist default]
     (if (nil? (first filelist))
@@ -79,8 +79,8 @@
            best (min1 fpop)]
 
       ;; Print progress info
-      (do (print iter) 
-          (print " ") 
+      (do (print typ)  (print " ")
+          (print iter) (print " ")
           (println best))
 
       ;; If the last iteration, stop and return
@@ -98,7 +98,7 @@
   ;; GA parameters
   (let* [outfile (first args)
          default-settings {
-                      "popsize" 500 
+                      "popsize" 250
                       "iters" 500 
                       "hold-rate" 0.4 
                       "tourny-size" 4 
@@ -127,7 +127,7 @@
          theme1      (l 'theme iters (get settings "fitness") theme1-pop phraselen popsize tourny-size mutation-rate nil)
          theme2      (l 'theme iters (get settings "fitness") theme2-pop phraselen popsize tourny-size mutation-rate nil)
          chords      (l 'chord iters (get settings "fitness") chord1-pop phraselen popsize tourny-size mutation-rate nil)
-         development (l 'development (* 2 iters) (get settings "fitness") devel-pop (* 2 phraselen) popsize tourny-size mutation-rate [theme1 theme2])
+         development (l 'development iters (get settings "fitness") devel-pop (* 2 phraselen) popsize tourny-size mutation-rate [theme1 theme2])
          ]
 
     ;; Print the song components to the specified file
