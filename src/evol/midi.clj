@@ -9,8 +9,23 @@
 ;; Write a list of holds and notes as a midi file to the given file location
 (defn melody->midi [melody chords file]
   (def cmajor [-13 -12 -10 -8 -7 -5 -3 -1 0 2 4 5 7 9 11 12 14])
-  (defn make-chord [root]
+  ;(def triads ["M" "m" "d" "M" "m" "m" "M" "M" "m" "d" "M" "m" "m" "M" "M" "m" "d"]
+  (def triads ["d" "M" "m" "m" "M" "M" "m" "d" "M" "m" "m" "M" "M" "m" "d" "M" "m"])
+  (def scale-triads (zipmap cmajor triads))
+  (defn make-major-chord [root]
     (list root (+ root 4) (+ root 7)))
+  (defn make-minor-chord [root]
+    (list root (+ root 3) (+ root 7)))
+  (defn make-augmented-chord [root]
+    (list root (+ root 4) (+ root 8)))
+  (defn make-diminished-chord [root]
+    (list root (+ root 3) (+ root 6)))
+  (defn make-chord [root]
+    (case (get scale-triads (- (+ root 12) 60))
+      "M" (make-major-chord root)
+      "m" (make-minor-chord root)
+      "a" (make-augmented-chord root)
+      "d" (make-diminished-chord root)))
   (defn lower [note] (- note 12))
   (defn midi-music [melody chords]
     [{:spacing-inverted true}
