@@ -7,7 +7,7 @@
 (require '[evol.utils :refer :all])
 
 ;; Write a list of holds and notes as a midi file to the given file location
-(defn melody->midi [melody chords file]
+(defn melody->midi [with-chords melody chords file]
   (def cmajor [-13 -12 -10 -8 -7 -5 -3 -1 0 2 4 5 7 9 11 12 14])
   ;(def triads ["M" "m" "d" "M" "m" "m" "M" "M" "m" "d" "M" "m" "m" "M" "M" "m" "d"]
   (def triads ["d" "M" "m" "m" "M" "M" "m" "d" "M" "m" "m" "M" "M" "m" "d" "M" "m"])
@@ -21,11 +21,13 @@
   (defn make-diminished-chord [root]
     (list root (+ root 3) (+ root 6)))
   (defn make-chord [root]
-    (case (get scale-triads (- (+ root 12) 60))
-      "M" (make-major-chord root)
-      "m" (make-minor-chord root)
-      "a" (make-augmented-chord root)
-      "d" (make-diminished-chord root)))
+    (if (not with-chords)
+      root
+      (case (get scale-triads (- (+ root 12) 60))
+        "M" (make-major-chord root)
+        "m" (make-minor-chord root)
+        "a" (make-augmented-chord root)
+        "d" (make-diminished-chord root))))
   (defn lower [note] (- note 12))
   (defn midi-music [melody chords]
     [{:spacing-inverted true}
@@ -64,14 +66,17 @@
 ;; Convert a song structure of the form,
 ;;     [ [theme1 chords1] [theme2 chords2] [devel chords] ]
 ;; to a midi file at the given location
-(defn song->midi [song file]
+(defn song->midi [song file with-chords]
   (let [melody  (map first song)
         chords (map second song)]
-    (melody->midi (sonata-allegro melody) (sonata-allegro chords) file)))
+    (melody->midi with-chords (sonata-allegro melody) (sonata-allegro chords) file)))
 
 (defn -main [& args] 
   (let* [infile   (first args)
          outfile  (second args)
+         chords   (if (nil? (second (rest args)))
+                    false
+                    (= 0 (compare "c" (second (rest args)))))
          contents (read-string (slurp infile))]
-    (song->midi contents outfile)))
+    (song->midi contents outfile chords)))
 
