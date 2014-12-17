@@ -66,6 +66,11 @@
       default
       (json/read-str (slurp (first filelist)))))
 
+
+;; ****
+;; MAIN
+;; ****
+
 ;; Main entry point
 (defn -main [& args]
   (defn elitism [best newpop]
@@ -79,8 +84,8 @@
            best (min1 fpop)]
 
       ;; Print progress info
-      (do (print typ)  (print " ")
-          (print iter) (print " ")
+      (do (print   typ)  (print " ")
+          (print   iter) (print " ")
           (println best))
 
       ;; If the last iteration, stop and return
@@ -129,10 +134,12 @@
          chords      (l 'chord iters (get settings "fitness") chord-pop phraselen popsize tourny-size mutation-rate nil)
          development (l 'development iters (get settings "fitness") devel-pop DEVELLEN popsize tourny-size mutation-rate [theme1 theme2])]
 
-    ;; Print the song components to the specified file
+    ;; Print the fitness information for the two themes and the development
     (fitness/print-fitness-info 'theme theme1)
     (fitness/print-fitness-info 'theme theme2)
     (fitness/print-fitness-info 'development development)
+
+    ;; Print the song components to the specified file
     (song->file outfile theme1 theme2 development chords)
     (println (str "Song written to " outfile))))
 

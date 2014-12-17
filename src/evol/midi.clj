@@ -11,14 +11,19 @@
   (def cmajor [-13 -12 -10 -8 -7 -5 -3 -1 0 2 4 5 7 9 11 12 14])
   (def triads ["d" "M" "m" "m" "M" "M" "m" "d" "M" "m" "m" "M" "M" "m" "d" "M" "m"])
   (def scale-triads (zipmap cmajor triads))
+
   (defn make-major-chord [root]
     (list root (+ root 4) (+ root 7)))
+
   (defn make-minor-chord [root]
     (list root (+ root 3) (+ root 7)))
+
   (defn make-augmented-chord [root]
     (list root (+ root 4) (+ root 8)))
+
   (defn make-diminished-chord [root]
     (list root (+ root 3) (+ root 6)))
+
   (defn make-chord [root]
     (if (not with-chords)
       root
@@ -27,11 +32,14 @@
         "m" (make-minor-chord root)
         "a" (make-augmented-chord root)
         "d" (make-diminished-chord root))))
+
   (defn lower [note] (- note 12))
+
   (defn midi-music [melody chords]
     [{:spacing-inverted true}
      (_ [ {:channel 1 :program 1} melody]
         [ {:channel 2 :program 1} chords] _) 0 ])
+
   (defn line->vec [line]
     (let* [melody-with-rests (map (fn [x] (if (rest? x) x x)) line)
            lengths     (map (fn [_] NOTEVAL) melody-with-rests)
@@ -56,11 +64,15 @@
     file))
 
 ;; Convert a song data structure to a sonata-allegro form line
+;; | T1 T2 :| D T1 T2
 (defn sonata-allegro [song]
-  (flatten (concat (first  song) (second song)
-                   (first  song) (second song)
-                   (second (rest song)) 
-                   (first  song) (second song))))
+  (flatten (concat (first  song)
+                   (second song)
+                   (first  song)
+                   (second song)
+                   (second (rest song))
+                   (first  song)
+                   (second song))))
 
 ;; Convert a song structure of the form,
 ;;     [ [theme1 chords1] [theme2 chords2] [devel chords] ]
@@ -68,7 +80,10 @@
 (defn song->midi [song file with-chords]
   (let [melody  (map first song)
         chords (map second song)]
-    (melody->midi with-chords (sonata-allegro melody) (sonata-allegro chords) file)))
+    (melody->midi with-chords
+                  (sonata-allegro melody)
+                  (sonata-allegro chords)
+                  file)))
 
 (defn -main [& args] 
   (let* [infile   (first args)

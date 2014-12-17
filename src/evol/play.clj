@@ -137,10 +137,10 @@
   (let [s1  (first s)
         s2  (second s)
         dev (second (rest s))]
-    (play-sonata (get settings :with-chords) 
-                 (get settings :key1) 
-                 (get settings :key2) 
-                 (get settings :mode) 
+    (play-sonata (get settings :with-chords)
+                 (get settings :key1)
+                 (get settings :key2)
+                 (get settings :mode)
                  (get settings :bpm)
                  (inst-chords (first s1) (second s1))
                  (first s1)
@@ -168,8 +168,8 @@
                        false
                        (= 0 (compare "c" chord-param)))]
     (play-song song {:with-chords with-chords
-                     :key1 (resolve-key key1) 
-                     :key2 (resolve-key key2) 
-                     :mode (resolve-mode mode) 
+                     :key1 (resolve-key key1)
+                     :key2 (resolve-key key2)
+                     :mode (resolve-mode mode)
                      :bpm (read-string bpm)})))
 

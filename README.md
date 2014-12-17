@@ -11,7 +11,7 @@ There are three targets provided. These can be compiled with `lein uberjar`, or 
 
 #### Genetic Algorithm
 
-To generate a song run `lein ga <outfile> [<config>`].
+To generate a song run `lein ga <outfile> [<config>]`.
 
 For example, `lein ga awesome.song` or `lein ga awesome.song config.json`. A sample configuration is provided.
 
@@ -107,7 +107,7 @@ To achieve a sense of musicality rather than mostly random notes, an individual 
 
 To keep the phrase driving, each downbeat should have a note rather than a rest. An individual is penalized for each downbeat that contains a rest. 
 
-Finally, the individual is compared with desired distributions of interval jumps and note durations, and penalized for the distance away from these desired distributions using Kullback-Leibler divergence to measure the difference. These distributions can be modified in order to create compositions of differing styles. The weighting associated with the Kullback-Leibler criteria are high since KL-divergence becomes small (under 0.1) rapidly. If the domain of possibility is not identical in the expectation and observation, then a fitness value of 2 times the weighting is returned. This avoids infinite surprise due to KL-divergence in this case.
+Finally, the individual is compared with desired distributions of interval jumps and note durations, and penalized for the distance away from these desired distributions using Kullback-Leibler divergence to measure the difference. These distributions can be modified in order to create compositions of differing styles. The weighting associated with the Kullback-Leibler criteria are high since KL-divergence becomes small (under 0.1) rapidly. If the domain of possibility is not identical in the expectation and observation, then a fitness value of `10` times the weighting is returned. This avoids infinite surprise due to KL-divergence in this case.
 
 #### Development-Only Fitness Criteria
 

@@ -32,7 +32,6 @@
 ;; * Phrase fitness *plus*:
 ;;     * Start on start note
 ;;     * End on end note
-;;     * Slow down over time
 ;;
 
 ;; ***********
@@ -303,22 +302,21 @@
 ;; API
 ;; ***
 
-
 (defn fitness-phrase [melody settings]
-  (+ (* 50  (fit-start-on-tonic        melody))
-     (* 50  (fit-end-on-tonic          melody))
-     (* 200 (fit-note-on-downbeats     melody))
+  (+ (* 50  (fit-start-on-tonic melody))
+     (* 50  (fit-end-on-tonic melody))
+     (* 200 (fit-note-on-downbeats melody))
      (* 800 (fit-interval-distribution melody (get settings "interval-distribution")))
-     (* 800 (fit-length-distribution   melody (get settings "duration-distribution")))
-     (* 150 (fit-on-beat-notes         melody))))
+     (* 800 (fit-length-distribution melody (get settings "duration-distribution")))
+     (* 150 (fit-on-beat-notes melody))))
 
 ;; Return the fitness for a theme
 (defn fitness-theme [melody settings]
   (+ (fitness-phrase melody settings)
-     (* 10 (fit-repeating-rhythm melody 5))
-     (* 5 (fit-repeating-rhythm melody  3))
-     (* 10 (fit-repeating-notes melody  5))
-     (* 5 (fit-repeating-notes melody   3))
+     (* 10  (fit-repeating-rhythm melody 5))
+     (* 5   (fit-repeating-rhythm melody 3))
+     (* 10  (fit-repeating-notes melody 5))
+     (* 5   (fit-repeating-notes melody 3))
      (* 100 (fit-hill-shape melody))))
 
 (defn fitness-development [melody theme1 theme2 settings]
@@ -328,13 +326,13 @@
 
 ;; Return the fitness for a chord rhythm
 (defn fitness-chord [melody settings]
-  (+ (* 50 (fit-start-on-tonic       melody))
-     (* 50 (fit-end-on-tonic         melody))
-     (* 200 (fit-note-on-downbeats   melody))
-     (* 10 (fit-repeating-rhythm melody 5))
-     (* 5 (fit-repeating-rhythm melody  3))
-     (* 800 (fit-length-distribution melody   (get settings "chord-dur-distribution")))
-     (* 20 (fit-on-beat-notes        melody))))
+  (+ (* 50  (fit-start-on-tonic melody))
+     (* 50  (fit-end-on-tonic melody))
+     (* 200 (fit-note-on-downbeats melody))
+     (* 10  (fit-repeating-rhythm melody 5))
+     (* 5   (fit-repeating-rhythm melody 3))
+     (* 800 (fit-length-distribution melody (get settings "chord-dur-distribution")))
+     (* 20  (fit-on-beat-notes melody))))
 
 ;; Print the fitness report for a melody
 (defn print-fitness-info [typ melody]
@@ -347,7 +345,7 @@
   (print "  Hill shape             : ")
   (println (fit-hill-shape melody))
   (print "  Rest Ratio             : ")
-  (println (fit-rest-ratio melody 0.3))
+  (println (fit-rest-ratio melody 0.4))
   (print "  Note on beat           : ")
   (println (fit-on-beat-notes melody))
   (print "  Melodic interval       : ")
@@ -375,5 +373,8 @@
     (cond
       (= type- 'theme)       (fitness-theme melody settings)
       (= type- 'chord)       (fitness-chord melody settings)
-      (= type- 'development) (fitness-development melody (first themes) (second themes) settings))))
+      (= type- 'development) (fitness-development melody
+                                                  (first themes)
+                                                  (second themes)
+                                                  settings))))
 

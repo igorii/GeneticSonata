@@ -1,14 +1,14 @@
 {
     "hold-rate": 0.4,
-    "iters": 1,
+    "iters": 500,
     "phraselen": 32,
-    "tourny-size": 4,
+    "tourny-size": 7,
     "fitness": {
         "hold-rate": 0.3,
-        "interval-distribution": [[0,0.05],[1,0.48],[2,0.28],[3,0.05],[4,0.06],[5,0.08]],
-        "duration-distribution": [[1,0.6],[2,0.2],[3,0.1],[4,0.1]],
+        "interval-distribution" : [[0,0.05],[1,0.48],[2,0.28],[3,0.05],[4,0.06],[5,0.08]],
+        "duration-distribution" : [[1,0.6],[2,0.2],[3,0.1],[4,0.1]],
         "chord-dur-distribution": [[1,0.05],[2,0.05],[3,0.05],[4,0.85]]
     },
     "mutation-rate": 0.3,
-    "popsize": 4
+    "popsize": 500
 }
