@@ -294,10 +294,10 @@
 
 (defn cooperative-fitness [theme1 theme2]
   (fn [melody]
-    (+ (* 2 (fit-repeating-note-appearances melody theme1))
-       (* 2 (fit-repeating-rhythm-appearances melody theme1))
-       (* 2 (fit-repeating-note-appearances melody theme2))
-       (* 2 (fit-repeating-rhythm-appearances melody theme2)))))
+    (+ (* 1/2 (fit-repeating-note-appearances melody theme1))
+       (* 1/2 (fit-repeating-rhythm-appearances melody theme1))
+       (* 1/2 (fit-repeating-note-appearances melody theme2))
+       (* 1/2 (fit-repeating-rhythm-appearances melody theme2)))))
 
 ;; ***
 ;; API
@@ -305,25 +305,25 @@
 
 
 (defn fitness-phrase [melody settings]
-  (+ (* 50 (fit-start-on-tonic         melody))
-     (* 50 (fit-end-on-tonic           melody))
+  (+ (* 50  (fit-start-on-tonic        melody))
+     (* 50  (fit-end-on-tonic          melody))
      (* 200 (fit-note-on-downbeats     melody))
-     (* 10 (fit-repeating-rhythm melody 5))
-     (* 5 (fit-repeating-rhythm melody  3))
-     (* 10 (fit-repeating-notes melody  5))
-     (* 5 (fit-repeating-notes melody   3))
      (* 800 (fit-interval-distribution melody (get settings "interval-distribution")))
-     (* 800 (fit-length-distribution   melody (get settings "duration-distribution")))  
-     (* 100 (fit-on-beat-notes         melody))))
+     (* 800 (fit-length-distribution   melody (get settings "duration-distribution")))
+     (* 150 (fit-on-beat-notes         melody))))
 
 ;; Return the fitness for a theme
 (defn fitness-theme [melody settings]
   (+ (fitness-phrase melody settings)
+     (* 10 (fit-repeating-rhythm melody 5))
+     (* 5 (fit-repeating-rhythm melody  3))
+     (* 10 (fit-repeating-notes melody  5))
+     (* 5 (fit-repeating-notes melody   3))
      (* 100 (fit-hill-shape melody))))
 
 (defn fitness-development [melody theme1 theme2 settings]
-  (+ (fitness-phrase melody settings)
-     (reduce + 0 (map (fn [x] (* 20 (fit-hill-shape x))) (partition 16 melody)))
+  (+ (* 2 (fitness-phrase melody settings))
+     (reduce + 0 (map (fn [x] (* 100 (fit-hill-shape x))) (partition PHRASELEN melody)))
      ((cooperative-fitness theme1 theme2) melody)))
 
 ;; Return the fitness for a chord rhythm
@@ -337,27 +337,36 @@
      (* 20 (fit-on-beat-notes        melody))))
 
 ;; Print the fitness report for a melody
-(defn print-fitness-info [melody]
+(defn print-fitness-info [typ melody]
+  (print "[FITNESS]  ")
   (println (melody->str melody))
-  (print "  Start on tonic       : ")
+  (print "  Start on tonic         : ")
   (println (fit-start-on-tonic melody))
-  (print "  End on tonic         : ")
+  (print "  End on tonic           : ")
   (println (fit-end-on-tonic melody))
-  (print "  Hill shape           : ")
-  (println (fit-hill-shape           melody))
-  (print "  Rest Ratio           : ")
+  (print "  Hill shape             : ")
+  (println (fit-hill-shape melody))
+  (print "  Rest Ratio             : ")
   (println (fit-rest-ratio melody 0.3))
-  (print "  Note on beat         : ")
+  (print "  Note on beat           : ")
   (println (fit-on-beat-notes melody))
-  (print "  Melodic interval     : ")
+  (print "  Melodic interval       : ")
   (println (fit-melodic-intervals melody))
-  (print "  Fit repeating patter : ")
-  (println (fit-repeating-notes melody 6))
-  (print "  Fit repeating rhythm : ")
+  (print "  Fit repeating patter 5 : ")
+  (println (fit-repeating-notes melody 5))
+  (print "  Fit repeating rhythm 5 : ")
   (println (fit-repeating-rhythm melody 5))
-  (print "  Interval distro      : ")
+  (print "  Fit repeating patter 3 : ")
+  (println (fit-repeating-notes melody 3))
+  (print "  Fit repeating rhythm 3 : ")
+  (println (fit-repeating-rhythm melody 3))
+  (print "  Fit onbeat notes       : ")
+  (println (fit-on-beat-notes melody))
+  (print "  Fit notes on downbeat  : ")
+  (println (fit-note-on-downbeats melody))
+  (print "  Interval distro        : ")
   (println (fit-interval-distribution melody [[0 0.05] [1 0.48] [2 0.28] [3 0.05] [4 0.06] [5 0.08]]))
-  (print "  Length distro        : ")
+  (print "  Length distro          : ")
   (println (fit-length-distribution melody   [[1 0.6] [2 0.20] [3 0.1] [4 0.1]])))
 
 ;; Return the fitness for a given type of individual

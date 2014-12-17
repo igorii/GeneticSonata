@@ -60,7 +60,6 @@
 
 ;; Play a single note as a sampled piano
 (defmethod play-note :default [{midi :pitch seconds :duration}]
- ;(set :gate sampled-piano 0)
   (when midi (-> midi sampled-piano)))
 
 ;; ***********
@@ -97,15 +96,17 @@
       (phrase new-lengths new-melody)))
 
   ;; Given the parameters of a sonata-allegro composition, collect the parameters and play
-  (defn play-sonata [key1- key2- mode- bpm- chords1 theme1 chords2 theme2 devchords development tr1 tr2]
+  (defn play-sonata [with-chords key1- key2- mode- bpm- chords1 theme1 chords2 theme2 devchords development tr1 tr2]
 
     ;; Make a chord phrase given a list of roots and holds
-    (defn make-chords [roots key- mode-]
-      (let [fold (fold-holds  roots (map (fn [_] NOTEVAL) roots))]
-        (->> (phrase (map second fold)
-                     (into [] (map (fn [x]
-                                     (-> chord/triad (chord/root x) (dissoc :v)))
-                                   (map first fold))))
+    (defn make-chords [with-chords roots key- mode-]
+      (let [fold (fold-holds  roots (map (fn [_] NOTEVAL) roots))
+            notes (if with-chords 
+                    (into [] (map (fn [x] (-> chord/triad (chord/root x) (dissoc :v)))
+                                  (map first fold)))
+                    (map first fold))]
+
+        (->> (phrase (map second fold) notes)
           (wherever :pitch, :pitch lower)
           (where :pitch (comp key- mode-))
           (where :part (is :default)))))
@@ -115,11 +116,11 @@
            m2   (->> (i->phrase theme2)      (where :pitch (comp key1- mode-)) (where :part (is :default)))
            m2'  (->> (i->phrase theme2)      (where :pitch (comp key2- mode-)) (where :part (is :default)))
            dev' (->> (i->phrase development) (where :pitch (comp key2- mode-)) (where :part (is :default)))
-           nchords1  (make-chords chords1 key1- mode-)
-           nchords1' (make-chords chords1 key2- mode-)
-           nchords2  (make-chords chords2 key1- mode-)
-           nchords2' (make-chords chords2 key2- mode-)
-           nchords3' (make-chords devchords key2- mode-)]
+           nchords1  (make-chords with-chords chords1 key1- mode-)
+           nchords1' (make-chords with-chords chords1 key2- mode-)
+           nchords2  (make-chords with-chords chords2 key1- mode-)
+           nchords2' (make-chords with-chords chords2 key2- mode-)
+           nchords3' (make-chords with-chords devchords key2- mode-)]
       (->>
         m1
         (then (with m1   nchords1))
@@ -136,7 +137,8 @@
   (let [s1  (first s)
         s2  (second s)
         dev (second (rest s))]
-    (play-sonata (get settings :key1) 
+    (play-sonata (get settings :with-chords) 
+                 (get settings :key1) 
                  (get settings :key2) 
                  (get settings :mode) 
                  (get settings :bpm)
@@ -160,8 +162,13 @@
          key1 (second args)
          key2 (second (rest args))
          mode (second (rest (rest args)))
-         bpm  (second (rest (rest (rest args))))]
-    (play-song song {:key1 (resolve-key key1) 
+         bpm  (second (rest (rest (rest args))))
+         chord-param  (second (rest (rest (rest (rest args)))))
+         with-chords (if (nil? chord-param)
+                       false
+                       (= 0 (compare "c" chord-param)))]
+    (play-song song {:with-chords with-chords
+                     :key1 (resolve-key key1) 
                      :key2 (resolve-key key2) 
                      :mode (resolve-mode mode) 
                      :bpm (read-string bpm)})))

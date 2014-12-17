@@ -110,7 +110,7 @@
                                 "interval-distribution"  [[0 0.05] [1 0.48] [2 0.28] [3 0.05] [4 0.06] [5 0.08]]
                                 "chord-dur-distribution" [[1 0.05] [2 0.05] [3 0.05] [4 0.85]]}}
 
-         settings (get-settings (rest args) default-settings)
+         settings      (get-settings (rest args) default-settings)
          popsize       (get settings "popsize")
          iters         (get settings "iters")
          hold-rate     (get settings "hold-rate")
@@ -121,16 +121,18 @@
 
          ;; Run the GA for each sonata component
          theme1-pop  (init-population popsize hold-rate rest-rate phraselen NOTERANGE)
-         chord1-pop  (init-population popsize hold-rate rest-rate phraselen CHORDRANGE)
+         chord-pop   (init-population popsize hold-rate rest-rate phraselen CHORDRANGE)
          theme2-pop  (init-population popsize hold-rate rest-rate phraselen NOTERANGE)
-         devel-pop   (init-population popsize hold-rate rest-rate (* 2 phraselen) NOTERANGE)
+         devel-pop   (init-population popsize hold-rate rest-rate DEVELLEN NOTERANGE)
          theme1      (l 'theme iters (get settings "fitness") theme1-pop phraselen popsize tourny-size mutation-rate nil)
          theme2      (l 'theme iters (get settings "fitness") theme2-pop phraselen popsize tourny-size mutation-rate nil)
-         chords      (l 'chord iters (get settings "fitness") chord1-pop phraselen popsize tourny-size mutation-rate nil)
-         development (l 'development iters (get settings "fitness") devel-pop (* 2 phraselen) popsize tourny-size mutation-rate [theme1 theme2])
-         ]
+         chords      (l 'chord iters (get settings "fitness") chord-pop phraselen popsize tourny-size mutation-rate nil)
+         development (l 'development iters (get settings "fitness") devel-pop DEVELLEN popsize tourny-size mutation-rate [theme1 theme2])]
 
     ;; Print the song components to the specified file
+    (fitness/print-fitness-info 'theme theme1)
+    (fitness/print-fitness-info 'theme theme2)
+    (fitness/print-fitness-info 'development development)
     (song->file outfile theme1 theme2 development chords)
     (println (str "Song written to " outfile))))
 
